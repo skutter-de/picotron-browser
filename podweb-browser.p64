@@ -117,7 +117,7 @@ function layout_nodes(nodes)
       end
       local block_h = #code_lines * LINE_H + 6
       y += 2
-      add(render_items, { tag="code", lines=code_lines, y=y, h=block_h })
+      add(render_items, { tag="code", lines=code_lines, y=y, h=block_h, copy_str=node.text })
       y += block_h + 4
 
     elseif node.tag == "img" then
@@ -266,10 +266,28 @@ function draw_button(b)
   print(b.label, tx, ty, hovered and 0 or 6)
 end
 
+on_event("click", function()
+  for _, item in ipairs(render_items) do
+    if item.tag == "code" and is_copy_hovered(item) then
+      set_clipboard(item.copy_str)
+      break
+    end
+  end
+end)
+
 function draw_address_bar()
   rectfill(0, 0, W-1, BAR_H-1, 0)
   draw_button(RELOAD_BTN)
   line(0, BAR_H, W-1, BAR_H, 5)
+end
+
+function is_copy_hovered(item)
+  local mx, my = mouse()
+  local screen_y = BAR_H + 1 + item.y - scroll_y
+  local lw = measure_text("copy")
+  local lx = PAD_X + CONT_W - lw
+  return mx >= lx and mx < lx + lw
+     and my >= screen_y + 2 and my < screen_y + 2 + LINE_H
 end
 
 function is_link_hovered(item)
@@ -297,6 +315,9 @@ function draw_content()
       elseif item.tag == "code" then
         rectfill(PAD_X-2, y, PAD_X+CONT_W+2, y+item.h-1, 0)
         rect    (PAD_X-2, y, PAD_X+CONT_W+2, y+item.h-1, 5)
+        local lw = measure_text("copy")
+        local lx = PAD_X + CONT_W - lw
+        print("copy", lx, y+3, is_copy_hovered(item) and 7 or 5)
         for li, code_line in ipairs(item.lines) do
           print(code_line, PAD_X+2, y+3+(li-1)*LINE_H, 11)
         end
