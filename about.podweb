@@ -9,7 +9,7 @@ author: Manuel Geissberger
 
 [p-]
 The web outside is a bit broken. Ads, trackers, paywalls, dark patterns.
-Podweb is an experiment in something smaller and friendlier — a tiny web
+Podweb is an experiment in something smaller and friendlier - a tiny web
 that lives entirely inside Picotron, built on podnet.
 [-p]
 
@@ -25,7 +25,7 @@ is hand-written and human-readable.
 
 [p-]
 This browser fetches .podweb files from podnet, parses the tags and
-renders them. It is itself a Picotron cart — a p64 file you can read,
+renders them. It is itself a Picotron cart - a p64 file you can read,
 modify and redistribute.
 [-p]
 

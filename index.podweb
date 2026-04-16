@@ -9,7 +9,7 @@ author: Manuel Geissberger
 
 [p-]
 Podweb is a small, cozy corner of the internet living inside Picotron.
-Every user gets their own space on podnet — a bit of cloud storage tied
+Every user gets their own space on podnet - a bit of cloud storage tied
 to their Lexaloffle account. Podweb turns that storage into a browsable
 web of pages, connected by links and explored through this browser.
 [-p]
@@ -27,7 +27,7 @@ and linking to each other.
 Each user can place an index.podweb file in their podnet folder.
 This browser fetches that file and renders it. Links let you hop from
 one user's page to another. Over time, friendly domain names can replace
-the raw numeric user IDs — stored locally after your first visit.
+the raw numeric user IDs - stored locally after your first visit.
 [-p]
 
 [link file=about.podweb] Learn more about this project
