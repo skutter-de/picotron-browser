@@ -3,6 +3,8 @@ domain: podweb.info
 author: Manuel Geissberger
 [-meta]
 
+[img url=podnet://48932/banner.gfx]
+
 [h1] Welcome to Podweb
 
 [h2] What is Podweb?

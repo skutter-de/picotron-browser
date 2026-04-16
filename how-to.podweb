@@ -73,6 +73,19 @@ Once someone visits your page, their browser remembers that domain name
 and lets them type it directly into the address bar.
 [-p]
 
+[p] Images from your podnet:
+
+[code-]
+[img url=podnet://YOUR_USER_ID/myimage.gfx]
+[img url=podnet://YOUR_USER_ID/myimage.gfx alt=A description of the image]
+[-code]
+
+[p-]
+Images are loaded from .gfx files on podnet. The alt text is shown if
+the image fails to load. Images wider than the browser are scaled down
+to fit. Narrower images are centered automatically.
+[-p]
+
 [h2] Step 2 - find your user ID
 
 [p-]

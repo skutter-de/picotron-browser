@@ -66,6 +66,24 @@ end
 --[[pod_format="raw",created="2026-04-16 21:10:06",modified="2026-04-16 21:13:13",revision=3]]
 -- Converts parsed nodes into positioned render items with absolute y coordinates
 
+local function extract_sprite(raw)
+  if type(raw) == "userdata" then return raw end
+  if type(raw) ~= "table" then return nil end
+  -- map-style layer structure: {[1]={bmp=<userdata>,...}}
+  if raw[1] and type(raw[1]) == "table" and type(raw[1].bmp) == "userdata" then
+    return raw[1].bmp
+  end
+  -- direct numeric index (0-based or 1-based)
+  for i = 0, 1 do
+    if type(raw[i]) == "userdata" then return raw[i] end
+  end
+  -- fallback: first userdata found
+  for _, v in pairs(raw) do
+    if type(v) == "userdata" then return v end
+  end
+  return nil
+end
+
 function layout_nodes(nodes)
   local render_items, y = {}, 4
 
@@ -101,6 +119,22 @@ function layout_nodes(nodes)
       y += 2
       add(render_items, { tag="code", lines=code_lines, y=y, h=block_h })
       y += block_h + 4
+
+    elseif node.tag == "img" then
+      local raw    = fetch(node.url)
+      local sprite = extract_sprite(raw)
+      if sprite then
+        local iw, ih = sprite:width(), sprite:height()
+        local scale  = min(1, CONT_W / iw)
+        local dw, dh = flr(iw * scale), flr(ih * scale)
+        y += 4
+        add(render_items, { tag="img", sprite=sprite, y=y, h=dh, w=dw, src_w=iw, src_h=ih })
+        y += dh + 4
+      else
+        local msg = "image not found: " .. node.alt
+        add(render_items, { tag="p", text=msg, y=y })
+        y += LINE_H + 4
+      end
     end
   end
 
@@ -175,6 +209,15 @@ function parse_podweb(src)
         end
       end
       add(nodes, { tag=tag, text=text })
+      i += 1
+
+    elseif string.match(l, "^%[img") then
+      local url = string.match(l, "url=([^%s%]]+)")
+      local alt = string.match(l, "alt=([^%]]+)")
+      if alt then alt = string.match(alt, "^%s*(.-)%s*$") end
+      if url then
+        add(nodes, { tag="img", url=url, alt=alt or url })
+      end
       i += 1
 
     elseif string.match(l, "^%[link") then
@@ -257,6 +300,13 @@ function draw_content()
         for li, code_line in ipairs(item.lines) do
           print(code_line, PAD_X+2, y+3+(li-1)*LINE_H, 11)
         end
+      elseif item.tag == "img" then
+        local ix = flr((W - item.w) / 2)
+        if item.src_w == item.w and item.src_h == item.h then
+          spr(item.sprite, ix, y)
+        else
+          sspr(item.sprite, 0, 0, item.src_w, item.src_h, ix, y, item.w, item.h)
+        end
       else
         print(item.text, PAD_X, y, 6)
       end
@@ -266,12 +316,18 @@ function draw_content()
 end
 
 :: .info.pod
---[[pod,created="2026-04-16 00:00:00",modified="2026-04-16 21:23:47",runtime=25,workspaces={{location="main.lua#89",workspace_index=1},{location="config.lua",workspace_index=1},{location="parser.lua",workspace_index=1},{location="layout.lua#1",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua#43",workspace_index=1},{location="gfx/ui.gfx",workspace_index=2}}]]
+--[[pod,created="2026-04-16 00:00:00",modified="2026-04-16 21:53:39",runtime=25,workspaces={{location="main.lua#96",workspace_index=1},{location="config.lua",workspace_index=1},{location="parser.lua",workspace_index=1},{location="layout.lua#1",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua#43",workspace_index=1}}]]
 :: gfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:23:47"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:53:39"]]
+:: gfx/ui.gfx
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI2LTA0LTE2IDIxOjQxOjA5Iixtb2RpZmllZD0iMjAyNi0w
+NC0xNiAyMTo0MTowOSIscmV2aXNpb249MF1dbHo0AJ0AAAAxMQAA8yF7WzBdPXtibXA9cHh1AEMg
+EBAE8FYHEAfAF9AXwAcQB-BWLGZsYWdzPTAscGFuX3gIAMt5PTAsem9vbT04fSw_APUDJHpwenAK
+UApwCgAaIApwCkAaBABfenB68DRQAB0f8DEA----------------------------------------
+------------------------plBtPTh9fQ==
 :: main.lua
 b64$LS1bW3BvZF9mb3JtYXQ9InJhdyIsY3JlYXRlZD0iMjAyNi0wNC0xNiAyMToxNToyOCIsbW9k
-aWZpZWQ9IjIwMjYtMDQtMTYgMjE6MTU6MzgiLHJldmlzaW9uPTFdXQotLSBQb2R3ZWIgQnJvd3Nl
+aWZpZWQ9IjIwMjYtMDQtMTYgMjE6NTM6MzkiLHJldmlzaW9uPTVdXQotLSBQb2R3ZWIgQnJvd3Nl
 ciB2MC4yIOKAlCBlbnRyeSBwb2ludCwgc3RhdGUsIGFuZCBsaWZlY3ljbGUKaW5jbHVkZSgiY29u
 ZmlnLmx1YSIpCmluY2x1ZGUoInBhcnNlci5sdWEiKQppbmNsdWRlKCJsYXlvdXQubHVhIikKaW5j
 bHVkZSgiZG9tYWlucy5sdWEiKQppbmNsdWRlKCJyZW5kZXJlci5sdWEiKQoKZ3VpICAgICAgICAg
@@ -316,9 +372,9 @@ ZyA9PSAibGluayIgYW5kIGlzX2xpbmtfaG92ZXJlZChpdGVtKSB0aGVuCiAgICAgICAgICBmb2xs
 b3dfbGluayhpdGVtKQogICAgICAgICAgYnJlYWsKICAgICAgICBlbmQKICAgICAgZW5kCiAgICBl
 bmQKICBlbmQKICBwcmV2X21vdXNlX2J0biA9IG1iCiAgZ3VpOnVwZGF0ZV9hbGwoKQplbmQKCmZ1
 bmN0aW9uIF9kcmF3KCkKICBjbHMoMSkKICBkcmF3X2FkZHJlc3NfYmFyKCkKICBkcmF3X2NvbnRl
-bnQoKQogIGd1aTpkcmF3X2FsbCgpCmVuZA==
+bnQoKQogIGd1aTpkcmF3X2FsbCgpCiAgc3ByKDEsMTAsMTAsMTAsMTApCmVuZA==
 :: map/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:23:47"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:53:39"]]
 :: sfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:23:47"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:53:39"]]
 :: [eoc]
