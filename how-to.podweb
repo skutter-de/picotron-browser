@@ -1,5 +1,6 @@
 [meta-]
 domain: podweb.info
+author: Saturn91.dev
 [-meta]
 
 [h1] How to create your own Podweb page
@@ -7,15 +8,15 @@ domain: podweb.info
 [h2] What you need
 
 [p-]
-All you need is a Lexaloffle account with Picotron access. Your podnet
+All you need is a Lexaloffle account with a Picotron license. Your podnet
 storage is already waiting for you - no sign-up required.
 [-p]
 
 [h2] Step 1 - write your page
 
 [p-]
-Create a plain text file called index.podweb. A page is made up of tagged
-blocks. Here are all the supported tags:
+Create a plain text file called index.podweb. A page is built from
+tagged blocks. Everything is plain text... for now... - no HTML, no styling, no scripts.
 [-p]
 
 [p] Headings:
@@ -25,38 +26,40 @@ blocks. Here are all the supported tags:
 [h2] A Section Heading
 [-code]
 
-[p] Paragraphs (single line or multi-line block):
+[p] Short paragraphs on a single line:
 
 [code-]
-[p] A short paragraph on one line.
+[p] This is a short paragraph.
+[-code]
 
+[p] Longer paragraphs that span multiple lines use a block tag:
+
+[code-]
 [p-]
-A longer paragraph that can span
-multiple lines in the source file.
+This paragraph can span
+as many lines as you like.
+The browser joins them into one block of text.
 [-p]
 [-code]
 
 [p] Links to other pages:
 
 [code-]
-[link file=about.podweb] Link to another file on your own page
-[link user=12345] Link to another user's index page
-[link user=12345 file=projects.podweb] Link to a specific file on their page
+[link file=about.podweb] A page on your own podnet
+[link user=12345] Another user's index page
+[link user=12345 file=projects.podweb] A specific page on their podnet
 [-code]
 
-[p] Code blocks (like this one):
+[p] Code blocks for showing text as-is:
 
 [code-]
 [code-]
-anything you write here is shown as-is
-in a dark box with fixed-width text
-[-code]
+anything you write here
+is shown in a dark box
+[MINUScode] ... close needs of course - instead of MINUS
 [-code]
 
-[p-]
-You can also declare a friendly domain name for your page by adding a
-meta block at the very top of your file:
-[-p]
+[p] An optional meta block at the top of your file sets your domain name:
 
 [code-]
 [meta-]
@@ -66,41 +69,98 @@ author: Your Name
 [-code]
 
 [p-]
-Once someone visits your page, their browser will remember that domain
-name and let them navigate to it by name in the future.
+Once someone visits your page, their browser remembers that domain name
+and lets them type it directly into the address bar.
 [-p]
 
-[h2] Step 2 - publish your page
+[h2] Step 2 - find your user ID
 
 [p-]
-Open the picotron terminal and run the following:
+Every Picotron user has a numeric ID. Open the Picotron terminal and
+type the following to see yours:
 [-p]
 
 [code-]
-store("potnet://<YOUR-USER-ID>/index.podweb", fetch("<PATH-TO-YOUR-FILE>"))
+print(stat(64))
+[-code]
+
+[h2] Step 3 - publish your page
+
+[p-]
+Once you have your file ready, open the Picotron terminal and run this
+to upload it to your podnet:
+[-p]
+
+[code-]
+store("podnet://"..stat(64).."/index.podweb", fetch("/your/file/path.podweb"))
 [-code]
 
 [p-]
-The first argument is the local file path, the second is the filename
-it will have on your podnet. Once stored, your page is live and anyone
-with the Podweb browser can visit it using your numeric user ID:
+After that your page is live. Anyone with the Podweb browser can visit
+it immediately using your user ID:
 [-p]
 
 [code-]
 podnet://YOUR_USER_ID/index.podweb
 [-code]
 
+[h2] Bonus - the publish tool
+
 [p-]
-You can find your user ID by typing stat(64) in the Picotron terminal
-and looking for your account number.
+Typing out the full store() command every time is tedious. Instead you
+can install a small utility script that lets you publish any file with
+a single terminal command.
 [-p]
 
-[h2] Step 3 - link to other pages
+[p] Save the following script to:
+
+[code-]
+/appdata/system/util/publish.lua
+[-code]
+
+[p] Script contents:
+
+[code-]
+cd(env().path)
+
+local raw1 = env().argv[1]
+
+if raw1 == nil then
+    print("execution failed, please provide a filename e.g. index.podweb")
+    return
+end
+
+local function unquote(s)
+    if s == nil then return nil end
+    return string.match(s, '^"(.*)"$') or s
+end
+
+local arg1 = unquote(pod(raw1))
+local target_path = "podnet://" .. stat(64) .. "/" .. arg1
+local file_path = env().path .. "/" .. arg1
+local value = fetch(file_path)
+
+if value == nil then
+    print("no file found at: " .. file_path)
+    return
+end
+
+store(target_path, value)
+print("published to: " .. target_path)
+[-code]
 
 [p-]
-Add links in your page to connect to other users. If you know someone's
-user ID you can link directly to their index page. Once you visit their
-page your browser will learn their domain name too, if they have set one.
+Once the file is in place, open a terminal, navigate to the folder
+containing your .podweb file, and run:
+[-p]
+
+[code-]
+publish index.podweb
+[-code]
+
+[p-]
+The tool reads your user ID automatically with stat(64), so it works
+for any logged-in user without any changes to the script.
 [-p]
 
 [link file=index.podweb] Back to home

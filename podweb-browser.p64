@@ -205,7 +205,7 @@ function parse_podweb(src)
 end
 
 :: renderer.lua
---[[pod_format="raw"]]
+--[[pod_format="raw",created="2026-04-16 21:19:47",modified="2026-04-16 21:20:47",revision=2]]
 -- Draws the address bar, buttons, and page content
 
 function is_over_button(b)
@@ -248,7 +248,7 @@ function draw_content()
       elseif item.tag == "h2" then
         print(item.text, PAD_X, y, 12)
       elseif item.tag == "link" then
-        local col = is_link_hovered(item) and 7 or 12
+        local col = is_link_hovered(item) and 29 or 30
         print(item.text, PAD_X, y, col)
         line(PAD_X, y+LINE_H-1, PAD_X+measure_text(item.text)-1, y+LINE_H-1, col)
       elseif item.tag == "code" then
@@ -266,9 +266,9 @@ function draw_content()
 end
 
 :: .info.pod
---[[pod,created="2026-04-16 00:00:00",modified="2026-04-16 21:17:53",runtime=25,workspaces={{location="main.lua#89",workspace_index=1},{location="config.lua",workspace_index=1},{location="parser.lua",workspace_index=1},{location="layout.lua#1",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua",workspace_index=1}}]]
+--[[pod,created="2026-04-16 00:00:00",modified="2026-04-16 21:23:47",runtime=25,workspaces={{location="main.lua#89",workspace_index=1},{location="config.lua",workspace_index=1},{location="parser.lua",workspace_index=1},{location="layout.lua#1",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua#43",workspace_index=1},{location="gfx/ui.gfx",workspace_index=2}}]]
 :: gfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:17:53"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:23:47"]]
 :: main.lua
 b64$LS1bW3BvZF9mb3JtYXQ9InJhdyIsY3JlYXRlZD0iMjAyNi0wNC0xNiAyMToxNToyOCIsbW9k
 aWZpZWQ9IjIwMjYtMDQtMTYgMjE6MTU6MzgiLHJldmlzaW9uPTFdXQotLSBQb2R3ZWIgQnJvd3Nl
@@ -318,7 +318,7 @@ bmQKICBlbmQKICBwcmV2X21vdXNlX2J0biA9IG1iCiAgZ3VpOnVwZGF0ZV9hbGwoKQplbmQKCmZ1
 bmN0aW9uIF9kcmF3KCkKICBjbHMoMSkKICBkcmF3X2FkZHJlc3NfYmFyKCkKICBkcmF3X2NvbnRl
 bnQoKQogIGd1aTpkcmF3X2FsbCgpCmVuZA==
 :: map/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:17:53"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:23:47"]]
 :: sfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:17:53"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-16 21:23:47"]]
 :: [eoc]

@@ -15,7 +15,7 @@ end
 
 local arg1 = unquote(pod(raw1))
 
-local target_path = "podnet://48932/" .. arg1
+local target_path = "podnet://" .. stat(64) .. "/" .. arg1
 local file_path = env().path .."/" .. arg1
 local value = fetch(file_path)
 
