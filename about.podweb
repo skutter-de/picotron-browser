@@ -1,0 +1,32 @@
+[meta-]
+domain: podweb.info
+author: Manuel Geissberger
+[-meta]
+
+[h1] About Podweb
+
+[h2] Why?
+
+[p-]
+The web outside is a bit broken. Ads, trackers, paywalls, dark patterns.
+Podweb is an experiment in something smaller and friendlier — a tiny web
+that lives entirely inside Picotron, built on podnet.
+[-p]
+
+[h2] The format
+
+[p-]
+Pages are plain text files with a simple tag system. Tags like h1, h2
+and p handle structure. Block tags wrap across multiple lines. Everything
+is hand-written and human-readable.
+[-p]
+
+[h2] The browser
+
+[p-]
+This browser fetches .podweb files from podnet, parses the tags and
+renders them. It is itself a Picotron cart — a p64 file you can read,
+modify and redistribute.
+[-p]
+
+[link file=index.podweb] Back to home
