@@ -1,0 +1,70 @@
+[meta-]
+domain: podweb.info
+author: Saturn91.dev
+[-meta]
+
+[h1] Roadmap
+
+[p] Potentially coming features:
+
+[h2] 1. Icon buttons in search bar
+
+[p] Clickable reload and enter icons in the address bar for a cleaner look.
+
+[h2] 2. Browser history
+
+[p] Navigate back and forward through previously visited pages.
+
+[h2] 3. Inline links
+
+[p-]
+Links embedded directly inside a paragraph of text rather than on their
+own line. Could look something like this:
+[-p]
+
+[code-]
+[p] Visit the [link- user=48932 file=projects.podweb]this link[-link] for more details.
+[-code]
+
+[h2] 4. Editable colors
+
+[p] Let users customize the browser color theme to their liking.
+
+[h2] 5. Image links
+
+[p-]
+Clickable images that navigate to another page when clicked. Could look
+something like this:
+[-p]
+
+[code-]
+[p] [img url=podnet://48932/banner.gfx -> podweb.info/about.podweb]
+[-code]
+
+[h2] 6. Basic scripting
+
+[p-]
+Minimal scripting support embedded in .podweb pages. No example yet,
+but the vision includes animated GIFs, a simple console output block,
+alert-style message boxes, and small in-browser minigames.
+[-p]
+
+[h2] Feature requests
+
+[p] - A list tag for bullet point content
+
+[p] - Make all text selectable for copy and paste
+
+[p] - Code blocks should use a monospace font
+
+[p] - A bookmark function to save favourite pages
+
+[p] - Syntax highlighting support for text editors like strawberry_src
+
+[p] - A specialised .podweb editor with error highlighting and a toolbar for inserting tags correctly
+
+[h2] Known bugs
+
+[p] None reported yet.
+
+[link file=index.podweb] back to home
