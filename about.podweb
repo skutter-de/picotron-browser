@@ -3,6 +3,8 @@ domain: podweb.info
 author: Saturn91.dev
 [-meta]
 
+[img url=podnet://48932/banner_squibble.gfx]
+
 [h1] About Podweb
 
 [h2] Why?
@@ -29,6 +31,27 @@ renders them. It is itself a Picotron cart - a p64 file you can read,
 modify and redistribute.
 [-p]
 
-[p] made by saturn91: https://saturn91.dev
+[h2] The initial idea
+
+[p-]
+This project was for now only implemented by me - I also did not do a lot of research up front.
+You can imagine my surprise when I stumbled about a hugh thread on discord where people dicussed possible
+solutions for a potential picotron web markup. Here the discord thread btw:
+[-p]
+
+[code-]
+https://discord.com/channels/1068899948592107540/1485368072855617656
+[-code]
+
+[p-]
+Well for now I will continue to work on this project a bit more and observe if it will take off
+Exiting!!
+[-p]
+
+[p] made by saturn91:
+
+[code-]
+https://saturn91.dev
+[-code]
 
 [link file=index.podweb] Back to home
