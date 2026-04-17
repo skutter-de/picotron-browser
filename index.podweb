@@ -1,6 +1,6 @@
 [meta-]
 domain: podweb.info
-author: Manuel Geissberger
+author: Saturn91.dev
 [-meta]
 
 [img url=podnet://48932/banner.gfx]
@@ -15,6 +15,10 @@ Every user gets their own space on podnet - a bit of cloud storage tied
 to their Lexaloffle account. Podweb turns that storage into a browsable
 web of pages, connected by links and explored through this browser.
 [-p]
+
+[h2] Some users have already contributed!!
+
+[link file=other-users.podweb] check their pages out here
 
 [h2] How it works
 
