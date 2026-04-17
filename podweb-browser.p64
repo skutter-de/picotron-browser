@@ -28,9 +28,9 @@ end
 DOMAINS_FILE = get_users_domain_file()
 HOME_URL     = "podnet://48932/index.podweb"
 
-RELOAD_BTN   = { x=4,    y=2, w=12, h=12, sprite=2 }
-BACK_BTN     = { x=20,   y=2, w=12, h=12, sprite=3 }
-FORWARD_BTN  = { x=36,   y=2, w=12, h=12, sprite=4 }
+BACK_BTN     = { x=4,    y=2, w=12, h=12, sprite=3 }
+FORWARD_BTN  = { x=20,   y=2, w=12, h=12, sprite=4 }
+RELOAD_BTN   = { x=36,   y=2, w=12, h=12, sprite=2 }
 SUBMIT_BTN   = { x=W-16, y=2, w=12, h=12, sprite=1 }
 
 :: domains.lua
@@ -177,9 +177,9 @@ function _init()
   load_known_domains()
 
   url_bar = gui:attach_text_editor{
-    x      = FORWARD_BTN.x + FORWARD_BTN.w + 4,
+    x      = RELOAD_BTN.x + RELOAD_BTN.w + 4,
     y      = 2,
-    width  = SUBMIT_BTN.x - (FORWARD_BTN.x + FORWARD_BTN.w + 4) - 4,
+    width  = SUBMIT_BTN.x - (RELOAD_BTN.x + RELOAD_BTN.w + 4) - 4,
     height = BAR_H - 4,
     key_callback = {
       ["enter"] = function(self, k)
@@ -575,16 +575,16 @@ function draw_address_bar()
 end
 
 :: .info.pod
---[[pod,created="2026-04-16 00:00:00",modified="2026-04-17 20:51:36",runtime=25,workspaces={{location="main.lua#102",workspace_index=1},{location="config.lua#3",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua",workspace_index=1},{location="gfx/ui.gfx#4",workspace_index=2},{location="gfx/0.gfx#3",workspace_index=2}}]]
+--[[pod,created="2026-04-16 00:00:00",modified="2026-04-17 20:55:29",runtime=25,workspaces={{location="main.lua#102",workspace_index=1},{location="config.lua#3",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua",workspace_index=1},{location="gfx/ui.gfx#4",workspace_index=2},{location="gfx/0.gfx#2",workspace_index=2}}]]
 :: gfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:51:36"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:55:29"]]
 :: gfx/0.gfx
 b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI2LTA0LTE3IDIwOjMzOjUyIixtb2RpZmllZD0iMjAyNi0w
-NC0xNyAyMDo1MTozNiIscmV2aXNpb249NV1dbHo0AN8AAABeMQAA8yF7WzBdPXtibXA9cHh1AEMg
+NC0xNyAyMDo1NToyOSIscmV2aXNpb249N11dbHo0ANgAAABWMQAA8yF7WzBdPXtibXA9cHh1AEMg
 EBAE8FYHEAfAF9AXwAcQB-BWLGZsYWdzPTAscGFuX3gIAMt5PTAsem9vbT04fSw_AP8BIirAKiAK
-gHpwimB60ArwZ0AAHcAEOpAaMBpwClAKYAoGAP8JUAoACgAKMApgKkAKcApgCuAaMAqgOvBIWAAd
-zzQK0FqAapBaoArwazwAHc83CpBqgHpwatAK8Gg8AB0f8DEA----------------------------
-------------------------------------E1BtPTh9fQ==
+gHpwimB60ArwZ0AAHf8RFDqgCjAKgAogCgAKAApgCjAqcApACoAK8AAK8AA68FhQAB3PNArQWoBq
+kFqgCvBrPAAdzzcKkGqAenBq0ArwaDwAHR-wMQD-------------------------------------
+--------------------------8TUG09OH19
 :: gfx/ui.gfx
 b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI2LTA0LTE2IDIxOjQxOjA5Iixtb2RpZmllZD0iMjAyNi0w
 NC0xNyAyMDozMDoyNyIscmV2aXNpb249Nl1dbHo0AN8AAABeMQAA8yF7WzBdPXtibXA9cHh1AEMg
@@ -1186,7 +1186,7 @@ FMI0FMA0FMA0wRTANMAUwTQUNBTANBTANBT9-f39-f3JNP3iFP39-f39-f39-f39-f39-f39-f39
 -f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39
 -f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39ygAAAAAAAAAB
 :: map/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:51:36"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:55:29"]]
 :: sfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:51:36"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:55:29"]]
 :: [eoc]

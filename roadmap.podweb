@@ -7,13 +7,13 @@ author: Saturn91.dev
 
 [p] Potentially coming features:
 
-[h2] 1. Icon buttons in search bar
+[h2] 1. Icon buttons in search bar ✓
 
-[p] Clickable reload and enter icons in the address bar for a cleaner look.
+[p] Done. Reload, enter, back, and forward icon buttons in the address bar.
 
-[h2] 2. Browser history
+[h2] 2. Browser history ✓
 
-[p] Navigate back and forward through previously visited pages.
+[p] Done. Back and forward navigation through the last 10 visited pages.
 
 [h2] 3. Inline links
 
