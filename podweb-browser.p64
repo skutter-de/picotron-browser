@@ -28,7 +28,8 @@ end
 DOMAINS_FILE = get_users_domain_file()
 HOME_URL     = "podnet://48932/index.podweb"
 
-RELOAD_BTN   = { x=4, y=2, w=36, h=12, label="Reload" }
+RELOAD_BTN   = { x=4,     y=2, w=12, h=12, sprite=2 }
+SUBMIT_BTN   = { x=W-16, y=2, w=12, h=12, sprite=1 }
 
 :: domains.lua
 --[[pod_format="raw"]]
@@ -80,7 +81,7 @@ function resolve_url(input)
 end
 
 :: main.lua
---[[pod_format="raw",created="2026-04-17 09:53:00",modified="2026-04-17 10:48:39",revision=7]]
+--[[pod_format="raw",created="2026-04-17 09:53:00",modified="2026-04-17 20:34:39",revision=12]]
 -- Podweb Browser v0.3 - entry point, state, and lifecycle
 include("config.lua")
 include("domains.lua")
@@ -141,7 +142,7 @@ function _init()
   url_bar = gui:attach_text_editor{
     x      = RELOAD_BTN.x + RELOAD_BTN.w + 4,
     y      = 2,
-    width  = W - RELOAD_BTN.x - RELOAD_BTN.w - 8,
+    width  = SUBMIT_BTN.x - (RELOAD_BTN.x + RELOAD_BTN.w + 4) - 4,
     height = BAR_H - 4,
     key_callback = {
       ["enter"] = function(self, k)
@@ -172,6 +173,13 @@ function _update()
   local _, _, mb = mouse()
   if (prev_mb & 1) == 1 and (mb & 1) == 0 then
     if is_over_button(RELOAD_BTN) then load_page() end
+    if is_over_button(SUBMIT_BTN) then
+      local input = url_bar:get_text()[1]
+      if input and input ~= "" then
+        current_url = resolve_url(input) or input
+        load_page()
+      end
+    end
   end
   prev_mb = mb
   gui:update_all()
@@ -507,25 +515,37 @@ end
 function draw_button(b)
   local hovered = is_over_button(b)
   rectfill(b.x, b.y, b.x+b.w-1, b.y+b.h-1, hovered and 6 or 2)
-  rect    (b.x, b.y, b.x+b.w-1, b.y+b.h-1, 5)
-  local tx = b.x + flr((b.w - #b.label * 4) / 2)
-  local ty = b.y + flr((b.h - 5) / 2)
-  print(b.label, tx, ty, hovered and 0 or 6)
+  if b.sprite then
+    spr(b.sprite, b.x, b.y)
+  else
+    rect(b.x, b.y, b.x+b.w-1, b.y+b.h-1, 5)
+    local tx = b.x + flr((b.w - #b.label * 4) / 2)
+    local ty = b.y + flr((b.h - 5) / 2)
+    print(b.label, tx, ty, hovered and 0 or 6)
+  end
 end
 
 function draw_address_bar()
   rectfill(0, 0, W-1, BAR_H-1, 0)
   draw_button(RELOAD_BTN)
+  draw_button(SUBMIT_BTN)
   line(0, BAR_H, W-1, BAR_H, 5)
 end
 
 :: .info.pod
---[[pod,created="2026-04-16 00:00:00",modified="2026-04-17 11:03:43",runtime=25,workspaces={{location="main.lua#6",workspace_index=1},{location="config.lua#3",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua",workspace_index=1},{location="gfx/ui.gfx#4",workspace_index=2}}]]
+--[[pod,created="2026-04-16 00:00:00",modified="2026-04-17 20:34:39",runtime=25,workspaces={{location="main.lua#102",workspace_index=1},{location="config.lua#3",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua",workspace_index=1},{location="gfx/ui.gfx#4",workspace_index=2},{location="gfx/0.gfx#4",workspace_index=2}}]]
 :: gfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 11:03:43"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:34:39"]]
+:: gfx/0.gfx
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI2LTA0LTE3IDIwOjMzOjUyIixtb2RpZmllZD0iMjAyNi0w
+NC0xNyAyMDozNDoxMCIscmV2aXNpb249M11dbHo0AN8AAABeMQAA8yF7WzBdPXtibXA9cHh1AEMg
+EBAE8FYHEAfAF9AXwAcQB-BWLGZsYWdzPTAscGFuX3gIAMt5PTAsem9vbT04fSw_AP8BIirAKiAK
+gHpwimB60ArwZ0AAHcAEOpAaMBpwClAKYAoGAP8JUAoACgAKMApgKkAKcApgCuAaMAqgOvBIWAAd
+zzUK0FqAapBaoArwajwAHc85CpBqgHpwatAK8GY8AB0f8DEA----------------------------
+------------------------------------E1BtPTh9fQ==
 :: gfx/ui.gfx
 b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI2LTA0LTE2IDIxOjQxOjA5Iixtb2RpZmllZD0iMjAyNi0w
-NC0xNyAxMTowMzo0MyIscmV2aXNpb249NV1dbHo0AN8AAABeMQAA8yF7WzBdPXtibXA9cHh1AEMg
+NC0xNyAyMDozMDoyNyIscmV2aXNpb249Nl1dbHo0AN8AAABeMQAA8yF7WzBdPXtibXA9cHh1AEMg
 EBAE8FYHEAfAF9AXwAcQB-BWLGZsYWdzPTAscGFuX3gIAMt5PTAsem9vbT04fSw_AP8BIirAKiAK
 gHpwimB60ArwZ0AAHcAEOpAaMBpwClAKYAoGAP8JUAoACgAKMApgKkAKcApgCuAaMAqgOvBIWAAd
 zzUK0FqAapBaoArwajwAHc85CpBqgHpwatAK8GY8AB0f8DEA----------------------------
@@ -1124,7 +1144,7 @@ FMI0FMA0FMA0wRTANMAUwTQUNBTANBTANBT9-f39-f3JNP3iFP39-f39-f39-f39-f39-f39-f39
 -f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39
 -f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39-f39ygAAAAAAAAAB
 :: map/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 11:03:43"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:34:39"]]
 :: sfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 11:03:43"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-17 20:34:39"]]
 :: [eoc]
