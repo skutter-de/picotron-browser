@@ -42,13 +42,25 @@ The browser joins them into one block of text.
 [-p]
 [-code]
 
-[p] Links to other pages:
+[p] Links to other podweb pages:
 
 [code-]
 [link file=about.podweb] A page on your own podnet
 [link user=12345] Another user's index page
 [link user=12345 file=projects.podweb] A specific page on their podnet
 [-code]
+
+[p] Links to external https pages:
+
+[code-]
+[link url="https://example.com/page.podweb"] An external page
+[link url="https://example.com"] An external site (loads index.podweb automatically)
+[-code]
+
+[p-]
+The quotes around the url value are required. Without them the link
+will not be recognised as an external link.
+[-p]
 
 [p] Code blocks for showing text as-is:
 

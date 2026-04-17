@@ -37,9 +37,10 @@ pdw_doc(document, x, y)        -> renders document at x,y
 [-code]
 
 [p-]
-After calling pdw_update, check document.navigated_to. If a link was
-clicked it will be set to a table with user and file fields. Reset it
-by navigating to the new page (pdw_parse replaces the document).
+After calling pdw_update, check document.navigated_to. If a podweb
+link was clicked it contains user and file fields. If an external
+https link was clicked it contains a url field instead. Reset it by
+navigating to the new page (pdw_parse replaces the document).
 [-p]
 
 [h2] Minimal demo (main.lua)
