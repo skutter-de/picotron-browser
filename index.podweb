@@ -6,9 +6,6 @@ author: Saturn91.dev
 [img url=podnet://48932/banner.gfx]
 [p] banner image by CornetTheory
 
-[h1] Welcome to Podweb (latest version 1.2.0) with back and forward buttons!
-[img url=podnet://48932/latest_version.gfx]
-
 [h2] What is Podweb?
 
 [p-]
@@ -37,3 +34,10 @@ one user's page to another.
 [link file=podweb-markdown.podweb] the podweb markdown
 
 [link file=roadmap.podweb] roadmap
+
+[h2] update history
+[p] version 1.2.1 no more domains.lookup file stored in podnet
+
+[p] version 1.2.0 with back and forward buttons!
+[img url=podnet://48932/latest_version.gfx]
+
