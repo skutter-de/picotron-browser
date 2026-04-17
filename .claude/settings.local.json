@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '/^:: main\\\\.lua$/{found=1; next} /^:: /{found=0} found{printf \"%s\", $0}' C:/Users/manue/AppData/Roaming/Picotron/drive/projects/browser/podweb-browser.p64)"
+    ]
+  }
+}
