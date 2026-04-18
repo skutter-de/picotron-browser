@@ -143,11 +143,26 @@ end
 local CONT_Y = BAR_H + 1
 local CONT_H = H - BAR_H - 1
 
+local ERROR_PAGE = [[
+[p] ------------------------------------
+[h1] Nothing is here.
+[h2] Or how the world wide web would say
+[img url=podnet://48932/404.gfx]
+[p] Did you mistype? Then check the url.
+[p] Did you come here via a link? Let the owner of the containing page know that their link is broken.
+[p] ---------------------------------------
+]]
+
 function load_page()
   document = nil
-  local src = fetch(current_url)
+  local src, err = fetch(current_url)
   if src and src ~= "" then
     document = pdw_parse(src, W, CONT_H)
+    if #document.items == 0 then
+      document = pdw_parse(ERROR_PAGE, W, CONT_H)
+      if url_bar and url_bar.set_text then url_bar:set_text(current_url) end
+      return
+    end
     local meta = document.meta
     if meta.domain then
       local uid = string.match(current_url, "podnet://(%d+)/")
@@ -174,6 +189,7 @@ function load_page()
       or  current_url
     if url_bar and url_bar.set_text then url_bar:set_text(display) end
   else
+    document = pdw_parse(ERROR_PAGE, W, CONT_H)
     if url_bar and url_bar.set_text then url_bar:set_text(current_url) end
   end
 end
