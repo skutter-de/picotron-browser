@@ -66,6 +66,20 @@ The quotes around the url value are required. Without them the link
 will not be recognised as an external link.
 [-p]
 
+[p] Inline links embedded inside a paragraph:
+
+[code-]
+[p] Visit the [link- file=about.podweb]about page[-link] for details.
+[p] Check out [link- user=12345]this user[-link] or go to [link- file=index.podweb]home[-link].
+[-code]
+
+[p-]
+The same attribute syntax as the standalone link tag applies: file=,
+user=, and url="...". The link text is highlighted and underlined, and
+clicking it navigates just like a regular link. Inline links also work
+inside multi-line [p-] blocks and will wrap across lines correctly.
+[-p]
+
 [p] Code blocks for showing text as-is:
 
 [code-]

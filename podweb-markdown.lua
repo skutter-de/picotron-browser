@@ -35,11 +35,63 @@ local function wrap_text(text, max_w)
   return wrapped
 end
 
+local function parse_inline(text)
+  local spans, pos = {}, 1
+  while pos <= #text do
+    local ls, le, attrs, inner = string.find(text, "%[link%-([^%]]*)%](.-)%[%-link%]", pos)
+    if not ls then
+      local tail = string.sub(text, pos)
+      if tail ~= "" then add(spans, { type="text", text=tail }) end
+      break
+    end
+    if ls > pos then add(spans, { type="text", text=string.sub(text, pos, ls-1) }) end
+    local url  = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
+    local user = not url and string.match(attrs, "user=(%d+)")
+    local file = not url and attrs and string.match(attrs, "file=(%S+)")
+    add(spans, { type="link", text=inner, url=url, user=user, file=file })
+    pos = le + 1
+  end
+  return spans
+end
+
+local function wrap_spans(spans, max_w)
+  local toks = {}
+  for _, span in ipairs(spans) do
+    local lnk = span.type == "link" and span or nil
+    for word in string.gmatch(span.text, "%S+") do
+      add(toks, { text=word, link=lnk })
+    end
+  end
+  if #toks == 0 then return {{}} end
+  local lines, cur, cur_w = {}, {}, 0
+  local function push(text, link)
+    local last = cur[#cur]
+    if last and last.link == link then last.text ..= text
+    else add(cur, { text=text, link=link }) end
+  end
+  for _, tok in ipairs(toks) do
+    local tw = measure(tok.text)
+    local sw = cur_w > 0 and measure(" ") or 0
+    if cur_w > 0 and cur_w + sw + tw > max_w then
+      add(lines, cur) ; cur, cur_w, sw = {}, 0, 0
+    end
+    if sw > 0 then
+      local last = cur[#cur]
+      if last then last.text ..= " " end
+    end
+    push(tok.text, tok.link)
+    cur_w += sw + tw
+  end
+  if #cur > 0 then add(lines, cur) end
+  if #lines == 0 then add(lines, {}) end
+  return lines
+end
+
 -- -- parser --------------------------------------------------------------------
 
 local function parse_podweb(src)
   local nodes, lines, meta = {}, {}, {}
-  for line in string.gmatch(src .. "\n", "([^\n]*)\n") do add(lines, line) end
+  for line in string.gmatch(src .. "\n", "([^\n]*)\n") do add(lines, (string.gsub(line, "\r$", ""))) end
 
   local i = 1
   while i <= #lines do
@@ -71,7 +123,11 @@ local function parse_podweb(src)
           if p ~= "" then text = text == "" and p or (text .. " " .. p) end
         end
       end
-      add(nodes, { tag=tag, text=text })
+      if tag == "p" and string.find(text, "%[link%-") then
+        add(nodes, { tag=tag, spans=parse_inline(text) })
+      else
+        add(nodes, { tag=tag, text=text })
+      end
       i += 1
 
     elseif string.match(l, "^%[img") then
@@ -99,7 +155,11 @@ local function parse_podweb(src)
     elseif string.match(l, "^%[[%a%d]+%] .+") then
       local tag  = string.lower(string.match(l, "^%[([%a%d]+)%]"))
       local text = string.match(l, "^%[[%a%d]+%] (.+)")
-      add(nodes, { tag=tag, text=text })
+      if tag == "p" and string.find(text, "%[link%-") then
+        add(nodes, { tag=tag, spans=parse_inline(text) })
+      else
+        add(nodes, { tag=tag, text=text })
+      end
       i += 1
 
     else
@@ -138,9 +198,25 @@ local function layout_nodes(nodes, cont_w)
       y += LINE_H + 3
 
     elseif node.tag == "p" then
-      for _, line in ipairs(wrap_text(node.text, cont_w)) do
-        add(items, { tag="p", text=line, y=y })
-        y += LINE_H
+      if node.spans then
+        for _, line_segs in ipairs(wrap_spans(node.spans, cont_w)) do
+          local lregs, rx = {}, PAD_X
+          for _, seg in ipairs(line_segs) do
+            local sw = measure(seg.text)
+            if seg.link then
+              local tw = measure((seg.text):match("^(.-)%s*$"))
+              add(lregs, { x=rx, w=tw, link=seg.link })
+            end
+            rx += sw
+          end
+          add(items, { tag="p", segs=line_segs, lregs=lregs, y=y })
+          y += LINE_H
+        end
+      else
+        for _, line in ipairs(wrap_text(node.text, cont_w)) do
+          add(items, { tag="p", text=line, y=y })
+          y += LINE_H
+        end
       end
       y += 4
 
@@ -202,6 +278,26 @@ local function copy_hovered(doc, item)
      and my >= sy + 2 and my < sy + 2 + LINE_H
 end
 
+local function seg_hovered(doc, item, seg_x, seg_w)
+  local mx, my = mouse()
+  local sy = doc.oy + item.y - doc.scroll_y
+  return mx >= doc.ox + seg_x and mx < doc.ox + seg_x + seg_w
+     and my >= sy and my < sy + LINE_H
+end
+
+local function inline_link_hovered(doc, item)
+  if not item.lregs or #item.lregs == 0 then return nil end
+  local mx, my = mouse()
+  local sy = doc.oy + item.y - doc.scroll_y
+  if my < sy or my >= sy + LINE_H then return nil end
+  for _, reg in ipairs(item.lregs) do
+    if mx >= doc.ox + reg.x and mx < doc.ox + reg.x + reg.w then
+      return reg.link
+    end
+  end
+  return nil
+end
+
 -- -- public API ----------------------------------------------------------------
 
 function pdw_parse(src, width, height)
@@ -251,6 +347,17 @@ function pdw_update(doc)
         end
         break
       end
+      if item.tag == "p" then
+        local lnk = inline_link_hovered(doc, item)
+        if lnk then
+          if lnk.url then
+            doc.navigated_to = { url=lnk.url }
+          else
+            doc.navigated_to = { user=lnk.user, file=lnk.file }
+          end
+          break
+        end
+      end
     end
   end
 
@@ -294,6 +401,21 @@ function pdw_doc(doc, ox, oy)
           spr(item.sprite, ix, y)
         else
           sspr(item.sprite, 0, 0, item.src_w, item.src_h, ix, y, item.w, item.h)
+        end
+
+      elseif item.tag == "p" and item.segs then
+        local sx = PAD_X
+        for _, seg in ipairs(item.segs) do
+          local sw = measure(seg.text)
+          if seg.link then
+            local tw = measure((seg.text):match("^(.-)%s*$"))
+            local col = seg_hovered(doc, item, sx, tw) and 29 or 30
+            print(seg.text, ox + sx, y, col)
+            line(ox + sx, y+LINE_H-1, ox + sx + tw - 1, y+LINE_H-1, col)
+          else
+            print(seg.text, ox + sx, y, 6)
+          end
+          sx += sw
         end
 
       else
