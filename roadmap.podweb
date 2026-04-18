@@ -12,7 +12,22 @@ author: Saturn91.dev
 [p] - Icon buttons in search bar
 [p] - back and forward navigation up to 10 steps
 
-[h2] 3. Inline links
+[h2] .png images support for the [img] tag
+
+[p] as I know added support for https:// pages, this might simplify that
+
+[h2] Image links
+
+[code-]
+[p] [img url=podnet://48932/banner.gfx -> podweb.info/about.podweb]
+[-code]
+
+[p-]
+Clickable images that navigate to another page when clicked. Could look
+something like this:
+[-p]
+
+[h2] Inline links
 
 [p-]
 Links embedded directly inside a paragraph of text rather than on their
@@ -23,20 +38,9 @@ own line. Could look something like this:
 [p] Visit the [link- user=48932 file=projects.podweb]this link[-link] for more details.
 [-code]
 
-[h2] 4. Editable colors
+[h2] Editable colors
 
 [p] Let users customize the browser color theme to their liking.
-
-[h2] 5. Image links
-
-[p-]
-Clickable images that navigate to another page when clicked. Could look
-something like this:
-[-p]
-
-[code-]
-[p] [img url=podnet://48932/banner.gfx -> podweb.info/about.podweb]
-[-code]
 
 [h2] 6. Basic scripting
 

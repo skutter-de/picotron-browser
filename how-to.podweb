@@ -12,6 +12,10 @@ All you need is a Lexaloffle account with a Picotron license. Your podnet
 storage is already waiting for you - no sign-up required.
 [-p]
 
+[p-]
+>>>> alternativly... you CAN host in the world wide web aswell (see Publish via the world wide web)
+[-p]
+
 [h2] Step 1 - write your page
 
 [p-]
@@ -54,7 +58,7 @@ The browser joins them into one block of text.
 
 [code-]
 [link url="https://example.com/page.podweb"] An external page
-[link url="https://example.com"] An external site (loads index.podweb automatically)
+[link url="https://example.com/index.podweb"] An external pages index file
 [-code]
 
 [p-]
@@ -98,18 +102,29 @@ the image fails to load. Images wider than the browser are scaled down
 to fit. Narrower images are centered automatically.
 [-p]
 
-[h2] Step 2 - find your user ID
+[h2] Step 3 - publish / host your page
 
-[p-]
-Every Picotron user has a numeric ID. Open the Picotron terminal and
-type the following to see yours:
-[-p]
+[h2] the easy way
+
+[p] run this command here in your terminal
 
 [code-]
-print(stat(64))
+default_app podweb /system/apps/notebook.p64
 [-code]
 
-[h2] Step 3 - publish your page
+[p] from now on you can double click .podweb files to open them directly in picotrons texteditor.
+
+[p] now simply navigate to your podnet by running
+
+[code-]
+open("podnet://")
+[-code]
+
+[p] and create a file index.podweb - this is where all the markup explained above is used for
+
+[h2] slightly more complicated BUT keeping a local copy
+
+[p] create a local index.podweb file somewhere
 
 [p-]
 Once you have your file ready, open the Picotron terminal and run this
@@ -129,7 +144,58 @@ it immediately using your user ID:
 podnet://YOUR_USER_ID/index.podweb
 [-code]
 
-[h2] Share your page
+[h2] your user ID
+
+[p-]
+Every Picotron user has a numeric ID. Open the Picotron terminal and
+type the following to see yours:
+[-p]
+
+[code-]
+print(stat(64))
+[-code]
+
+[h2] Publish via the world wide web (advanced)
+
+[p-]
+As of version 1.2.2 it is possible to access https:// hosted .podnet files which can be anywhere in the internet - Aslong as they have a consistant url
+which does not change - otherways people will not find your page again - which would be sad.
+[-p]
+
+[p-]
+The easiest way to host a .podweb page in the world wide web is to publish a git repo via github pages - I say easy... but this is the advanced part
+[-p]
+
+[code-]
+--repo structure
+-public
+ |-index.podweb <- this is the default entry point and is recommended to exist!
+ |-some-other-sub-page.podweb
+[-code]
+
+[p-]
+once you have hosted your page you can access it from picotrons podweb browser via its https address e.g.
+[-p]
+
+[code-]
+https://<YOUR-GITHUB-USER>.github.io/<YOUR-REPO>/
+[-code]
+
+[p] a real example
+
+[code-]
+https://saturn91.github.io/saturn91-dev-2_0-react-ts/
+[-code]
+
+[p] this will then open your index.podweb page
+
+[p] link to it from other potwebpages as follows
+
+[code-]
+[link url="https://<YOUR-GITHUB-USER>.github.io/<YOUR-REPO>/"]
+[-code]
+
+[h2] Step 4 Share your page with us! The community
 
 [p-]
 Once your page is live, share this address with other users so they can
@@ -146,7 +212,7 @@ visits your page will have the browser remember your domain name
 automatically, so they can use it as a shortcut from that point on.
 [-p]
 
-[h2] Bonus - the publish tool
+[h2] Bonus 2 - the publish tool
 
 [p-]
 Typing out the full store() command every time is tedious. Instead you
