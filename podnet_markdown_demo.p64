@@ -100,7 +100,8 @@ local function parse_inline(text)
     local url  = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
     local user = not url and string.match(attrs, "user=(%d+)")
     local file = not url and attrs and string.match(attrs, "file=(%S+)")
-    add(spans, { type="link", text=inner, url=url, user=user, file=file })
+    local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
+    add(spans, { type="link", text=inner, url=url, user=user, file=file, cart=cart })
     pos = le + 1
   end
   return spans
@@ -193,13 +194,15 @@ local function parse_podweb(src)
       local attrs = string.match(l, "^%[link([^%]]*)%]")
       local text  = string.match(l, "^%[link[^%]]*%] (.+)")
       if text then
-        local url = attrs and (string.match(attrs, 'url="([^"]+)"') or string.match(attrs, 'url=([^%s%]"]+)'))
+        local url  = attrs and (string.match(attrs, 'url="([^"]+)"') or string.match(attrs, 'url=([^%s%]"]+)'))
+        local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
         add(nodes, {
           tag  = "link",
           text = text,
           url  = url,
-          user = not url and attrs and string.match(attrs, "user=(%d+)"),
-          file = not url and attrs and string.match(attrs, "file=(%S+)"),
+          user = not url and not cart and attrs and string.match(attrs, "user=(%d+)"),
+          file = not url and not cart and attrs and string.match(attrs, "file=(%S+)"),
+          cart = cart,
         })
       end
       i += 1
@@ -274,7 +277,7 @@ local function layout_nodes(nodes, cont_w)
 
     elseif node.tag == "link" then
       y += 2
-      add(items, { tag="link", text=node.text, url=node.url, user=node.user, file=node.file, y=y })
+      add(items, { tag="link", text=node.text, url=node.url, user=node.user, file=node.file, cart=node.cart, y=y })
       y += LINE_H + 2
 
     elseif node.tag == "code" then
@@ -375,6 +378,7 @@ end
 
 function pdw_update(doc)
   doc.navigated_to = nil
+  doc.copied        = false
   local _, _, mb, _, mwy = mouse()
 
   if mwy and mwy ~= 0 then
@@ -387,6 +391,7 @@ function pdw_update(doc)
     for _, item in ipairs(doc.items) do
       if item.tag == "code" and copy_hovered(doc, item) then
         set_clipboard(item.copy_str)
+        doc.copied = true
         break
       end
     end
@@ -394,6 +399,8 @@ function pdw_update(doc)
       if item.tag == "link" and link_hovered(doc, item) then
         if item.url then
           doc.navigated_to = { url=item.url }
+        elseif item.cart then
+          doc.navigated_to = { cart=item.cart }
         else
           doc.navigated_to = { user=item.user, file=item.file }
         end
@@ -404,6 +411,8 @@ function pdw_update(doc)
         if lnk then
           if lnk.url then
             doc.navigated_to = { url=lnk.url }
+          elseif lnk.cart then
+            doc.navigated_to = { cart=lnk.cart }
           else
             doc.navigated_to = { user=lnk.user, file=lnk.file }
           end
