@@ -1,4 +1,56 @@
---[[pod_format="raw",created="2026-04-17 08:20:59",modified="2026-04-17 08:20:59",revision=0]]
+picotron cartridge // www.picotron.net
+version 2
+
+:: gfx/
+:: map/
+:: sfx/
+:: main.lua
+--[[pod_format="raw",created="2026-04-17 08:32:43",modified="2026-04-17 09:02:22",revision=30]]
+window({ width=250, height=160, title="podweb test" })
+
+local markdown_renderer_src = fetch("podnet://48932/podweb-markdown.lua")
+
+-- elaborate fetching to get the latest version of the parser if possible
+-- replace with "include podweb-markdown.lua" if it is no longer available
+if markdown_renderer_src then
+	load(markdown_renderer_src)()
+	print("successfully downloaded saturn91 latest parser")
+else
+	include("podweb-markdown.lua")
+	print("fallback to local parser...")
+end
+
+local current_url = "podnet://48932/index.podweb"
+local document
+
+local function load_page(url)
+  local src = fetch(url)
+  if src and src ~= "" then
+    current_url = url
+    document = pdw_parse(src, 200, 100)
+  end
+end
+
+load_page(current_url)
+
+function _update()
+  if not document then return end
+  pdw_update(document)
+  if document.navigated_to then
+    local nav      = document.navigated_to
+    local cur_user = string.match(current_url, "podnet://(%d+)/")
+    load_page("podnet://" .. (nav.user or cur_user) .. "/" .. nav.file)
+  end
+end
+
+function _draw()
+  cls()
+  if document then
+    pdw_doc(document, 10, 20)
+  end
+end
+:: podweb-markdown.lua
+--[[pod_format="raw",created="2026-04-17 08:56:19",modified="2026-04-17 08:56:19",revision=0]]
 -- podweb-markdown.lua
 -- API: pdw_parse(src, width, height) -> document, max_scroll
 --      pdw_update(document)          -> handles scrolling, links, copy
@@ -48,7 +100,8 @@ local function parse_inline(text)
     local url  = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
     local user = not url and string.match(attrs, "user=(%d+)")
     local file = not url and attrs and string.match(attrs, "file=(%S+)")
-    add(spans, { type="link", text=inner, url=url, user=user, file=file })
+    local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
+    add(spans, { type="link", text=inner, url=url, user=user, file=file, cart=cart })
     pos = le + 1
   end
   return spans
@@ -141,13 +194,15 @@ local function parse_podweb(src)
       local attrs = string.match(l, "^%[link([^%]]*)%]")
       local text  = string.match(l, "^%[link[^%]]*%] (.+)")
       if text then
-        local url = attrs and (string.match(attrs, 'url="([^"]+)"') or string.match(attrs, 'url=([^%s%]"]+)'))
+        local url  = attrs and (string.match(attrs, 'url="([^"]+)"') or string.match(attrs, 'url=([^%s%]"]+)'))
+        local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
         add(nodes, {
           tag  = "link",
           text = text,
           url  = url,
-          user = not url and attrs and string.match(attrs, "user=(%d+)"),
-          file = not url and attrs and string.match(attrs, "file=(%S+)"),
+          user = not url and not cart and attrs and string.match(attrs, "user=(%d+)"),
+          file = not url and not cart and attrs and string.match(attrs, "file=(%S+)"),
+          cart = cart,
         })
       end
       i += 1
@@ -222,7 +277,7 @@ local function layout_nodes(nodes, cont_w)
 
     elseif node.tag == "link" then
       y += 2
-      add(items, { tag="link", text=node.text, url=node.url, user=node.user, file=node.file, y=y })
+      add(items, { tag="link", text=node.text, url=node.url, user=node.user, file=node.file, cart=node.cart, y=y })
       y += LINE_H + 2
 
     elseif node.tag == "code" then
@@ -323,6 +378,7 @@ end
 
 function pdw_update(doc)
   doc.navigated_to = nil
+  doc.copied        = false
   local _, _, mb, _, mwy = mouse()
 
   if mwy and mwy ~= 0 then
@@ -335,6 +391,7 @@ function pdw_update(doc)
     for _, item in ipairs(doc.items) do
       if item.tag == "code" and copy_hovered(doc, item) then
         set_clipboard(item.copy_str)
+        doc.copied = true
         break
       end
     end
@@ -342,6 +399,8 @@ function pdw_update(doc)
       if item.tag == "link" and link_hovered(doc, item) then
         if item.url then
           doc.navigated_to = { url=item.url }
+        elseif item.cart then
+          doc.navigated_to = { cart=item.cart }
         else
           doc.navigated_to = { user=item.user, file=item.file }
         end
@@ -352,6 +411,8 @@ function pdw_update(doc)
         if lnk then
           if lnk.url then
             doc.navigated_to = { url=lnk.url }
+          elseif lnk.cart then
+            doc.navigated_to = { cart=lnk.cart }
           else
             doc.navigated_to = { user=lnk.user, file=lnk.file }
           end
@@ -435,3 +496,29 @@ function pdw_doc(doc, ox, oy)
 
   clip()
 end
+
+:: .info.pod
+--[[pod,created="2026-03-27 05:34:19",modified="2026-04-17 09:02:22",runtime=25,workspaces={{location="main.lua#14",workspace_index=1},{location="podweb-markdown.lua#309",workspace_index=1}}]]
+:: gfx/.info.pod
+--[[pod,created="2026-03-27 05:34:19",modified="2026-04-17 09:02:22"]]
+:: gfx/0.gfx
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI1LTAxLTE3IDEwOjM1OjQ4Iixtb2RpZmllZD0iMjAyNS0w
+MS0xNyAxMDozNzo0NCIscmV2aXNpb249Ml1dbHo0AH4AAAASMQAA8yF7WzBdPXtibXA9cHh1AEMg
+EBAE8FYHEAfAF9AXwAcQB-BWLGZsYWdzPTAscGFuX3gIAMt5PTAsem9vbT04fSw_AB-wMQD-----
+-----------------------------------------------------------XUG09OH19
+:: map/.info.pod
+--[[pod,created="2026-03-27 05:34:19",modified="2026-04-17 09:02:22"]]
+:: map/0.map
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI1LTAxLTE3IDEwOjM1OjQ4Iixtb2RpZmllZD0iMjAyNS0w
+MS0xNyAxMDozNzo0NCIscmV2aXNpb249MV1dbHo0AFQAAABEEAAA8Ah7e2JtcD11c2VyZGF0YSgi
+aTE2IiwzMgMALyIwAQD--------------------7oSIpLHBhbl94PTAIANJ5PTAsdGlsZV9oPTE2
+CgBgdz0xNn19
+:: sfx/.info.pod
+--[[pod,created="2026-03-27 05:34:19",modified="2026-04-17 09:02:22"]]
+:: sfx/0.sfx
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI1LTA3LTMxIDA4OjMwOjI4Iixtb2RpZmllZD0iMjAyNS0w
+Ny0zMSAwODozMDoyOCIscmV2aXNpb249MF1dbHo0AKAAAAALCgAA-zBweHUAAygAAAQABA9AEAIO
+AAGgASACoA4ADxAADfDKAQIDQA8PkAQFBgdADJAICQoLQAyQDwwPDQ8ODEAM8P8BAOv-J6oBEAYP
+MBABIAEgAfAAAhACDhABIA8hIAEwD0Dwww8oD--wxg-4Cg--D4AP9w8NAfAJARAGDjAA------_9
+H-8BAKzPyA9AAA8QQP--sPD-AQD-6lD-----KQ==
+:: [eoc]
