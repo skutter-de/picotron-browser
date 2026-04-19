@@ -80,6 +80,20 @@ clicking it navigates just like a regular link. Inline links also work
 inside multi-line [p-] blocks and will wrap across lines correctly.
 [-p]
 
+[p] Links that launch a Picotron cartridge:
+
+[code-]
+[link cart=podnet_browser] Launch the Podweb Browser
+[link cart=#podnet_browser] Same - the # is optional
+[-code]
+
+[p-]
+The cart= attribute opens the specified cartridge using its BBS id (the
+part after the # when you load it e.g. load #podnet_browser).
+Clicking the link runs the cart alongside the browser without closing it.
+Try it out with [link- cart=sakura]taxicomics wallpaper[-link]
+[-p]
+
 [p] Code blocks for showing text as-is:
 
 [code-]
@@ -182,9 +196,8 @@ The easiest way to host a .podweb page in the world wide web is to publish a git
 
 [code-]
 --repo structure
--public
- |-index.podweb <- this is the default entry point and is recommended to exist!
- |-some-other-sub-page.podweb
+-index.podweb <- this is the default entry point and is recommended to exist!
+-some-other-sub-page.podweb
 [-code]
 
 [p-]
@@ -192,13 +205,13 @@ once you have hosted your page you can access it from picotrons podweb browser v
 [-p]
 
 [code-]
-https://<YOUR-GITHUB-USER>.github.io/<YOUR-REPO>/
+https://<YOUR-GITHUB-USER>.github.io/<YOUR-REPO>/index.podweb
 [-code]
 
 [p] a real example
 
 [code-]
-https://saturn91.github.io/saturn91-dev-2_0-react-ts/
+https://saturn91.github.io/saturn91-dev-2_0-react-ts/index.podweb
 [-code]
 
 [p] this will then open your index.podweb page
@@ -206,7 +219,7 @@ https://saturn91.github.io/saturn91-dev-2_0-react-ts/
 [p] link to it from other potwebpages as follows
 
 [code-]
-[link url="https://<YOUR-GITHUB-USER>.github.io/<YOUR-REPO>/"]
+[link url="https://<YOUR-GITHUB-USER>.github.io/<YOUR-REPO>/index.podweb"]
 [-code]
 
 [h2] Step 4 Share your page with us! The community
