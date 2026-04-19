@@ -5,10 +5,10 @@ version 2
 :: map/
 :: sfx/
 :: config.lua
---[[pod_format="raw",created="2026-04-17 10:47:47",modified="2026-04-17 10:48:32",revision=2]]
+--[[pod_format="raw",created="2026-04-17 10:47:47",modified="2026-04-19 10:20:43",revision=4]]
 -- Screen dimensions, layout metrics, and network configuration
 
-VERSION      = "1.4.0"
+VERSION      = "1.4.1"
 
 W, H         = 480, 270
 BAR_H        = 16
@@ -59,6 +59,7 @@ function register_domain_if_new(domain, user_id)
 end
 
 function resolve_url(input)
+  if string.match(input, "^#?[%w_]+%.p64$") then return input end
   if string.match(input, "^podnet://") then return input end
   if string.match(input, "^https?://") then
     if not string.match(input, "^https?://[^/]+/.+") then
@@ -82,7 +83,7 @@ function resolve_url(input)
 end
 
 :: main.lua
---[[pod_format="raw",created="2026-04-17 09:53:00",modified="2026-04-19 09:33:20",revision=47]]
+--[[pod_format="raw",created="2026-04-17 09:53:00",modified="2026-04-19 10:44:32",revision=66]]
 -- Podweb Browser v0.3 - entry point, state, and lifecycle
 include("config.lua")
 include("domains.lua")
@@ -119,6 +120,11 @@ function push_history(url)
 end
 
 function navigate_to(url)
+  if string.match(url, "^#?[%w_]+%.p64$") then
+    local id = string.match(url, "^#?(.+)$")
+    create_process("bbs://" .. id)
+    return
+  end
   push_history(url)
   current_url = url
   load_page()
@@ -278,6 +284,10 @@ function _update()
       local nav = document.navigated_to
       if nav.url then
         navigate_to(nav.url)
+      elseif nav.cart then
+        local url = "bbs://" .. nav.cart .. ".p64"
+        create_process(url)
+        popup("running cart: " .. url)
       else
         local cur_user = string.match(current_url, "podnet://(%d+)/")
         navigate_to("podnet://" .. (nav.user or cur_user) .. "/" .. (nav.file or "index.podweb"))
@@ -310,7 +320,7 @@ function _draw()
   draw_popups()
 end
 :: podweb-markdown.lua
---[[pod_format="raw",created="2026-04-17 08:26:09",modified="2026-04-17 22:31:44",revision=7]]
+--[[pod_format="raw",created="2026-04-17 08:26:09",modified="2026-04-19 10:20:19",revision=24]]
 -- podweb-markdown.lua
 -- API: pdw_parse(src, width, height) -> document, max_scroll
 --      pdw_update(document)          -> handles scrolling, links, copy
@@ -360,7 +370,8 @@ local function parse_inline(text)
     local url  = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
     local user = not url and string.match(attrs, "user=(%d+)")
     local file = not url and attrs and string.match(attrs, "file=(%S+)")
-    add(spans, { type="link", text=inner, url=url, user=user, file=file })
+    local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
+    add(spans, { type="link", text=inner, url=url, user=user, file=file, cart=cart })
     pos = le + 1
   end
   return spans
@@ -453,13 +464,15 @@ local function parse_podweb(src)
       local attrs = string.match(l, "^%[link([^%]]*)%]")
       local text  = string.match(l, "^%[link[^%]]*%] (.+)")
       if text then
-        local url = attrs and (string.match(attrs, 'url="([^"]+)"') or string.match(attrs, 'url=([^%s%]"]+)'))
+        local url  = attrs and (string.match(attrs, 'url="([^"]+)"') or string.match(attrs, 'url=([^%s%]"]+)'))
+        local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
         add(nodes, {
           tag  = "link",
           text = text,
           url  = url,
-          user = not url and attrs and string.match(attrs, "user=(%d+)"),
-          file = not url and attrs and string.match(attrs, "file=(%S+)"),
+          user = not url and not cart and attrs and string.match(attrs, "user=(%d+)"),
+          file = not url and not cart and attrs and string.match(attrs, "file=(%S+)"),
+          cart = cart,
         })
       end
       i += 1
@@ -534,7 +547,7 @@ local function layout_nodes(nodes, cont_w)
 
     elseif node.tag == "link" then
       y += 2
-      add(items, { tag="link", text=node.text, url=node.url, user=node.user, file=node.file, y=y })
+      add(items, { tag="link", text=node.text, url=node.url, user=node.user, file=node.file, cart=node.cart, y=y })
       y += LINE_H + 2
 
     elseif node.tag == "code" then
@@ -656,6 +669,8 @@ function pdw_update(doc)
       if item.tag == "link" and link_hovered(doc, item) then
         if item.url then
           doc.navigated_to = { url=item.url }
+        elseif item.cart then
+          doc.navigated_to = { cart=item.cart }
         else
           doc.navigated_to = { user=item.user, file=item.file }
         end
@@ -666,6 +681,8 @@ function pdw_update(doc)
         if lnk then
           if lnk.url then
             doc.navigated_to = { url=lnk.url }
+          elseif lnk.cart then
+            doc.navigated_to = { cart=lnk.cart }
           else
             doc.navigated_to = { user=lnk.user, file=lnk.file }
           end
@@ -751,8 +768,9 @@ function pdw_doc(doc, ox, oy)
 end
 
 :: renderer.lua
---[[pod_format="raw"]]
+--[[pod_format="raw",created="2026-04-19 10:20:40",modified="2026-04-19 10:20:40",revision=0]]
 -- Browser chrome: address bar and reload button
+-- Brower chrome: address bar and reload button
 
 function is_over_button(b)
   local mx, my = mouse()
@@ -786,9 +804,9 @@ function draw_address_bar()
 end
 
 :: .info.pod
---[[pod,created="2026-04-16 00:00:00",modified="2026-04-19 09:33:20",runtime=25,workspaces={{location="main.lua#165",workspace_index=1},{location="config.lua#3",workspace_index=1},{location="domains.lua",workspace_index=1},{location="renderer.lua",workspace_index=1},{location="gfx/ui.gfx#4",workspace_index=2},{location="gfx/0.gfx#3",workspace_index=2}}]]
+--[[pod,created="2026-04-16 00:00:00",modified="2026-04-19 10:44:32",runtime=25,workspaces={{location="main.lua#204",workspace_index=1},{location="config.lua#3",workspace_index=1},{location="domains.lua",workspace_index=1},{location="podweb-markdown.lua#362",workspace_index=1},{location="gfx/ui.gfx#4",workspace_index=2},{location="gfx/0.gfx#3",workspace_index=2}}]]
 :: gfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-19 09:33:20"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-19 10:44:32"]]
 :: gfx/0.gfx
 b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI2LTA0LTE3IDIwOjMzOjUyIixtb2RpZmllZD0iMjAyNi0w
 NC0xOCAxNDoxNjo0OSIscmV2aXNpb249MTJdXWx6NADaAAAAWTEAAPMhe1swXT17Ym1wPXB4dQBD
@@ -1506,7 +1524,7 @@ FDTAFMY0FMA0FDQUwTQUNBTANBTENBTANBTCNBQ0FMA0FDQUwDQU-f39-f39xjQUwjQUwjTCFMA0
 wRTANBTBNMIUxDQUwDQUNBTANBQ0FMA0FDQUxzQUwDQUNBQ0FDQUNBTANBTENBTANBTANMEUNBTA
 NBQ0whT9-f39-f3AAAAAAAAAAAE=
 :: map/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-19 09:33:20"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-19 10:44:32"]]
 :: sfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-19 09:33:20"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-19 10:44:32"]]
 :: [eoc]

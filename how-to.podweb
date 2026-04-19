@@ -80,6 +80,20 @@ clicking it navigates just like a regular link. Inline links also work
 inside multi-line [p-] blocks and will wrap across lines correctly.
 [-p]
 
+[p] Links that launch a Picotron cartridge:
+
+[code-]
+[link cart=podnet_browser] Launch the Podweb Browser
+[link cart=#podnet_browser] Same - the # is optional
+[-code]
+
+[p-]
+The cart= attribute opens the specified cartridge using its BBS id (the
+part after the # when you load it e.g. load #podnet_browser).
+Clicking the link runs the cart alongside the browser without closing it.
+Try it out with [link- cart=sakura]taxicomics wallpaper[-link]
+[-p]
+
 [p] Code blocks for showing text as-is:
 
 [code-]
