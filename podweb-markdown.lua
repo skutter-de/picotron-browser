@@ -16,6 +16,10 @@ local CHAR_W   = 4
 local PAD_X    = 6
 local SCROLL_W = 4
 
+local WEBRING_BTN_W   = 44
+local WEBRING_BTN_H   = 13
+local WEBRING_BTN_GAP = 10
+
 -- font system
 
 local _default_font = fetch("/system/fonts/lil.font")
@@ -190,6 +194,14 @@ local function parse_podweb(src)
       if url then add(nodes, { tag="img", url=url, alt=alt or url }) end
       i += 1
 
+    elseif string.match(l, "^%[webring ") then
+      local my_url   = string.match(l, "my%-url=([^,%s%]]+)")
+      local ring_url = string.match(l, "ring%-data=([^%s%]]+)")
+      if my_url and ring_url then
+        add(nodes, { tag="webring", my_url=my_url, ring_url=ring_url })
+      end
+      i += 1
+
     elseif string.match(l, "^%[link") then
       local attrs = string.match(l, "^%[link([^%]]*)%]")
       local text  = string.match(l, "^%[link[^%]]*%] (.+)")
@@ -339,6 +351,55 @@ local function layout_nodes(nodes, cont_w)
         add(items, { tag="p", text="image not found: " .. node.alt, y=y, line_h=LINE_H })
         y += LINE_H + 4
       end
+
+    elseif node.tag == "webring" then
+      local raw = fetch(node.ring_url)
+      local title, join_url, urls = "webring", nil, {}
+      if raw and type(raw) == "string" then
+        local line_num = 0
+        for ln in string.gmatch(raw .. "\n", "([^\n]*)\n") do
+          local s = string.match(ln, "^%s*(.-)%s*$")
+          if s ~= "" then
+            line_num += 1
+            if     line_num == 1 then title    = s
+            elseif line_num == 2 then join_url = s
+            else                      add(urls, s) end
+          end
+        end
+      end
+      local my_idx = nil
+      for k, u in ipairs(urls) do
+        if u == node.my_url then my_idx = k ; break end
+      end
+      if not my_idx and #urls > 0 then
+        my_idx = flr(rnd(#urls)) + 1
+      end
+      local prev_url, next_url = nil, nil
+      if my_idx and #urls > 1 then
+        prev_url = urls[my_idx == 1 and #urls or my_idx - 1]
+        next_url = urls[my_idx == #urls and 1 or my_idx + 1]
+      end
+      _apply_font(nil)
+      local title_w  = measure(title)
+      local join_w   = join_url and measure("join us") or 0
+      local group_w  = join_url and (title_w + measure("  ") + join_w) or title_w
+      local join_off = title_w + measure("  ")
+      local item_h   = LINE_H + 4 + WEBRING_BTN_H + 4
+      y += 4
+      add(items, {
+        tag           = "webring",
+        title         = title,
+        prev_url      = prev_url,
+        next_url      = next_url,
+        join_url      = join_url,
+        group_w       = group_w,
+        join_offset_x = join_off,
+        join_w        = join_w,
+        y             = y,
+        h             = item_h,
+        line_h        = item_h,
+      })
+      y += item_h + 4
     end
   end
 
@@ -388,6 +449,32 @@ local function inline_link_hovered(doc, item)
     end
   end
   return nil
+end
+
+local function webring_btn_x(doc, item)
+  local gw = WEBRING_BTN_W * 2 + WEBRING_BTN_GAP
+  local lx = doc.ox + PAD_X + flr((doc.cont_w - gw) / 2)
+  return lx, lx + WEBRING_BTN_W + WEBRING_BTN_GAP
+end
+
+local function webring_btn_hovered(doc, item, which)
+  local mx, my = mouse()
+  local sy     = doc.oy + item.y - doc.scroll_y
+  local by     = sy + LINE_H + 4
+  local lx, rx = webring_btn_x(doc, item)
+  local bx     = which == "prev" and lx or rx
+  return mx >= bx and mx < bx + WEBRING_BTN_W
+     and my >= by and my < by + WEBRING_BTN_H
+end
+
+local function webring_join_hovered(doc, item)
+  if not item.join_url then return false end
+  local mx, my = mouse()
+  local sy = doc.oy + item.y - doc.scroll_y
+  if my < sy or my >= sy + LINE_H then return false end
+  local gx = doc.ox + PAD_X + flr((doc.cont_w - item.group_w) / 2)
+  local jx = gx + item.join_offset_x
+  return mx >= jx and mx < jx + item.join_w
 end
 
 -- public API
@@ -456,6 +543,18 @@ function pdw_update(doc)
           break
         end
       end
+      if item.tag == "webring" then
+        if item.prev_url and webring_btn_hovered(doc, item, "prev") then
+          doc.navigated_to = { url=item.prev_url }
+          break
+        elseif item.next_url and webring_btn_hovered(doc, item, "next") then
+          doc.navigated_to = { url=item.next_url }
+          break
+        elseif webring_join_hovered(doc, item) then
+          doc.navigated_to = { url=item.join_url }
+          break
+        end
+      end
     end
   end
 
@@ -505,6 +604,29 @@ function pdw_doc(doc, ox, oy)
         else
           sspr(item.sprite, 0, 0, item.src_w, item.src_h, ix, y, item.w, item.h)
         end
+
+      elseif item.tag == "webring" then
+        _apply_font(nil)
+        local gx = ox + PAD_X + flr((doc.cont_w - item.group_w) / 2)
+        print(item.title, gx, y, 6)
+        if item.join_url then
+          local jx  = gx + item.join_offset_x
+          local jcol = webring_join_hovered(doc, item) and 29 or 30
+          print("join us", jx, y, jcol)
+          line(jx, y+LINE_H-1, jx+item.join_w-1, y+LINE_H-1, jcol)
+        end
+        local by = y + LINE_H + 4
+        local lx, rx = webring_btn_x(doc, item)
+        local ph = webring_btn_hovered(doc, item, "prev")
+        rectfill(lx, by, lx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, ph and 5 or 1)
+        rect    (lx, by, lx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, ph and 12 or 5)
+        local pw = measure("< prev")
+        print("< prev", lx + flr((WEBRING_BTN_W - pw) / 2), by + flr((WEBRING_BTN_H - LINE_H) / 2) + 1, 7)
+        local nh = webring_btn_hovered(doc, item, "next")
+        rectfill(rx, by, rx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, nh and 5 or 1)
+        rect    (rx, by, rx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, nh and 12 or 5)
+        local nw = measure("next >")
+        print("next >", rx + flr((WEBRING_BTN_W - nw) / 2), by + flr((WEBRING_BTN_H - LINE_H) / 2) + 1, 7)
 
       elseif item.tag == "p" and item.segs then
         local sx = PAD_X

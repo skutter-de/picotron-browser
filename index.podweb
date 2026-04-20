@@ -19,6 +19,8 @@ web of pages, connected by links and explored through this browser.
 
 [link file=other-users.podweb] check their pages out here
 
+[webring my-url=podnet://48932/index.podweb, ring-data=podnet://48932/first.webring]
+
 [h2] How it works
 
 [p-]
@@ -45,5 +47,3 @@ one user's page to another.
 [p] version 1.2.1 no more domains.lookup file stored in podnet
 
 [p] version 1.2.0 with back and forward buttons!
-[img url=podnet://48932/latest_version.gfx]
-

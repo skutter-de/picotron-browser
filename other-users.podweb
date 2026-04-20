@@ -1,5 +1,11 @@
 [h1] Some other pages created by other users
 
+[p] you can either click on the users bellow manually or use the webring feature
+
+[webring my-url=podnet://48932/index.podweb, ring-data=podnet://48932/first.webring]
+
+[p] -----------------------------------------------------------------------------
+
 [p] [link- user=78402]thelxinoe5.gay[-link] : a gamedevs personal page
 [p] [link- user=54999 file=GamedevCave/index.podweb]taxicomics.cave[-link] explore some picotron code snippets
 [p] [link- user=135230]skutter.de[-link]: some thoughts on podweb
@@ -8,7 +14,7 @@
 [p] [link- user=71218] symtrkl.gay[-link]: A Qr code on podweb :D? (and some games :D)
 [p] [link- user=145245]pollygei.st[-link]: a test page
 
-[h2] links bellow only work with the newest version v1.2.2
+[h2] links bellow are hosted in the world wide web
 
 [p] [link- url="https://saturn91.dev/index.podweb"]https://saturn91.dev/index.podweb[-link] a gamedev's personal page
 [p] [link- url="https://kevinthompson.info/index.podweb"]https://kevinthompson.info/kevinthompson.info[-link] the podnet business card of a game designer

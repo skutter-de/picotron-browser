@@ -29,3 +29,5 @@ and [link- url="https://saturn91.dev/index.podweb"]saturn91.dev[-link] yes yes
 [p] --------------------------
 [h2 font=yummies] custom font test
 [p font=yum] this line is a fallback
+
+[webring my-url=podnet://48932/test.podweb, ring-data=podnet://48932/test.webring]

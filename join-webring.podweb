@@ -1,0 +1,44 @@
+[meta-]
+domain: podweb.info
+author: Saturn91.dev
+[-meta]
+
+[h1] Join the first webring
+
+[webring my-url=podnet://48932/join-webring.podweb, ring-data=podnet://48932/first.webring]
+
+[h2] About
+
+[p-]
+This is the original and first webring of podnet! A webring is a curated
+collection of pages connected together - use the previous and next buttons
+above to explore all the member pages.
+[-p]
+
+[h2] How to join
+
+[p-]
+Want your podweb page listed here?:
+[-p]
+
+[link file=how-to-webring.podweb] learn how webrings work
+
+[h3] 1. add the following lines to your page to show the webring on your page
+
+[code-]
+[webring my-url=<YOUR_URL>, ring-data=podnet://48932/first.webring]
+[-code]
+
+[h3] 2. after adding the feature - reach out to me to get added to the ring
+
+[p] share the url you would like to get added
+
+[p] - Message mother_of_steel#3868 on Discord
+
+[p] - Leave a comment on the podweb browser thread on Lexaloffle:
+
+[code-]
+"https://www.lexaloffle.com/bbs/?pid=187982#p
+[-code]
+
+[link file=index.podweb] back to home

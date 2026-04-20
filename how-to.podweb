@@ -337,4 +337,14 @@ The tool reads your user ID automatically with stat(64), so it works
 for any logged-in user without any changes to the script.
 [-p]
 
+[h2] Bonus 3 - webrings
+
+[p-]
+Webrings let you connect your page to a curated list of other podweb
+pages. Visitors can browse all member pages using previous and next
+buttons embedded right on your page.
+[-p]
+
+[link file=how-to-webring.podweb] learn how webrings work
+
 [link file=index.podweb] Back to home
