@@ -23,6 +23,7 @@ HOME_URL     = "podnet://48932/index.podweb"
 BACK_BTN     = { x=4,    y=2, w=12, h=12, sprite=3 }
 FORWARD_BTN  = { x=20,   y=2, w=12, h=12, sprite=4 }
 RELOAD_BTN   = { x=36,   y=2, w=12, h=12, sprite=2 }
+COPY_BTN     = { x=W-32, y=2, w=12, h=12, sprite=5 }
 SUBMIT_BTN   = { x=W-16, y=2, w=12, h=12, sprite=1 }
 
 :: domains.lua
@@ -257,7 +258,7 @@ function _init()
   url_bar = gui:attach_text_editor{
     x      = RELOAD_BTN.x + RELOAD_BTN.w + 4,
     y      = 2,
-    width  = SUBMIT_BTN.x - (RELOAD_BTN.x + RELOAD_BTN.w + 4) - 4,
+    width  = COPY_BTN.x - (RELOAD_BTN.x + RELOAD_BTN.w + 4) - 4,
     height = BAR_H - 4,
     key_callback = {
       ["enter"] = function(self, k)
@@ -300,6 +301,10 @@ function _update()
     if is_over_button(RELOAD_BTN) then load_page() end
     if is_over_button(BACK_BTN)    then go_back() end
     if is_over_button(FORWARD_BTN) then go_forward() end
+    if is_over_button(COPY_BTN) then
+      set_clipboard(current_url)
+      popup("copied to clipboard", 3)
+    end
     if is_over_button(SUBMIT_BTN) then
       local input = url_bar:get_text()[1]
       if input and input ~= "" then
@@ -1017,21 +1022,22 @@ function draw_address_bar()
   FORWARD_BTN.disabled = hist_idx >= #history
   draw_button(BACK_BTN)
   draw_button(FORWARD_BTN)
+  draw_button(COPY_BTN)
   draw_button(SUBMIT_BTN)
   line(0, BAR_H, W-1, BAR_H, 5)
 end
 
 :: .info.pod
---[[pod,author="Saturn91",created="2026-04-16 00:00:00",icon=userdata("u8",16,16,"0000000202020202020202020200000000000207070707070707070707020000000207171717170e0e0e0e17170702000207171717170e080808080e1717070202071717170e0808080808080e170702020717170e080808171708080e170702020717170e080817171708080e170702020717170e080817170808080e170702020717170e0808080808080e17170702020717170e08080808080e1717170702020717170e08080e1717171717170702021707170e08080e171717171707170202171707070707070707070707171702000217171717171717171717171702000000021717171717171717171702000000000002020202020202020202000000"),modified="2026-04-20 13:42:24",notes="Browse the Podweb in style!",runtime=25,title="Podweb Browser",version="1.4.1",workspaces={{location="main.lua#8",workspace_index=1},{location="config.lua#3",workspace_index=1},{location="domains.lua",workspace_index=1},{location="podweb-markdown.lua#477",workspace_index=1},{location="gfx/ui.gfx#4",workspace_index=2},{location="gfx/0.gfx#3",workspace_index=2}}]]
+--[[pod,author="Saturn91",created="2026-04-16 00:00:00",icon=userdata("u8",16,16,"0000000202020202020202020200000000000207070707070707070707020000000207171717170e0e0e0e17170702000207171717170e080808080e1717070202071717170e0808080808080e170702020717170e080808171708080e170702020717170e080817171708080e170702020717170e080817170808080e170702020717170e0808080808080e17170702020717170e08080808080e1717170702020717170e08080e1717171717170702021707170e08080e171717171707170202171707070707070707070707171702000217171717171717171717171702000000021717171717171717171702000000000002020202020202020202000000"),modified="2026-04-20 16:24:28",notes="Browse the Podweb in style!",runtime=25,title="Podweb Browser",version="1.4.1",workspaces={{location="main.lua#8",workspace_index=1},{location="config.lua#3",workspace_index=1},{location="domains.lua",workspace_index=1},{location="podweb-markdown.lua#477",workspace_index=1},{location="gfx/ui.gfx#4",workspace_index=2},{location="gfx/0.gfx#5",workspace_index=2}}]]
 :: gfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-20 13:42:24"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-20 16:24:28"]]
 :: gfx/0.gfx
 b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI2LTA0LTE3IDIwOjMzOjUyIixtb2RpZmllZD0iMjAyNi0w
-NC0xOCAxNDoxNjo0OSIscmV2aXNpb249MTJdXWx6NADaAAAAWTEAAPMhe1swXT17Ym1wPXB4dQBD
+NC0yMCAxNjoyNDoyOCIscmV2aXNpb249MTRdXWx6NADuAAAAbjEAAPMhe1swXT17Ym1wPXB4dQBD
 IBAQBPBWBxAHwBfQF8AHEAfwVixmbGFncz0wLHBhbl94CADLeT0wLHpvb209OH0sPgD-ASIqwCog
 CoB6cIpgetAK8GdAAB3-EhQqsAogCpAKQAqACiAKAAoACmAKMCpwCkAKkArwADrwWFEAHd81CtAK
-0FqgCvAACvBqPQAdEDY3AI_QatAK0ArwaT0AHR-wMQD---------------------------------
-------------------------------8TUG09OH19
+0FqgCvAACvBqPQAdEDY3AI_QatAK0ArwaT0AHYQiNrA2sBY3kAMAb7A3sDfwSEYAHR-wMQD-----
+---------------------------------------------------------_FQbT04fX0=
 :: gfx/ui.gfx
 b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI2LTA0LTE2IDIxOjQxOjA5Iixtb2RpZmllZD0iMjAyNi0w
 NC0xNyAyMDozMDoyNyIscmV2aXNpb249Nl1dbHo0AN8AAABeMQAA8yF7WzBdPXtibXA9cHh1AEMg
@@ -1742,7 +1748,7 @@ FDTAFMY0FMA0FDQUwTQUNBTANBTENBTANBTCNBQ0FMA0FDQUwDQU-f39-f39xjQUwjQUwjTCFMA0
 wRTANBTBNMIUxDQUwDQUNBTANBQ0FMA0FDQUxzQUwDQUNBQ0FDQUNBTANBTENBTANBTANMEUNBTA
 NBQ0whT9-f39-f3AAAAAAAAAAAE=
 :: map/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-20 13:42:24"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-20 16:24:28"]]
 :: sfx/.info.pod
---[[pod,created="2026-04-16 21:08:59",modified="2026-04-20 13:42:24"]]
+--[[pod,created="2026-04-16 21:08:59",modified="2026-04-20 16:24:28"]]
 :: [eoc]
