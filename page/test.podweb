@@ -31,3 +31,10 @@ and [link- url="https://saturn91.dev/index.podweb"]saturn91.dev[-link] yes yes
 [p font=yum] this line is a fallback
 
 [webring my-url=podnet://48932/test.podweb, ring-data=podnet://48932/test.webring]
+
+[download url=https://saturn91.dev/index.podweb]
+
+[p] check this [download url=https://saturn91.dev/index.podweb] out
+[p-]
+check this [download url=https://saturn91.dev/index.podweb] out
+[-p]

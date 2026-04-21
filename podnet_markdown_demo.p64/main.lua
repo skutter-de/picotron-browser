@@ -34,6 +34,22 @@ function _update()
     local cur_user = string.match(current_url, "podnet://(%d+)/")
     load_page("podnet://" .. (nav.user or cur_user) .. "/" .. nav.file)
   end
+  if document.download_requested then
+    local req       = document.download_requested
+    local fetch_url = string.gsub(req.url, "^podweb://", "podnet://")
+    local content   = fetch(fetch_url)
+    if content then
+      if fstat("/appdata/podweb-browser/downloads") == nil then
+        mkdir("/appdata/podweb-browser")
+        mkdir("/appdata/podweb-browser/downloads")
+      end
+      local dest = "/appdata/podweb-browser/downloads/" .. req.filename
+      store(dest, content)
+      print("downloaded to " .. dest)
+    else
+      print("download failed: " .. req.filename)
+    end
+  end
 end
 
 function _draw()

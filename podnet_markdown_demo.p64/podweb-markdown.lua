@@ -79,18 +79,31 @@ end
 local function parse_inline(text)
   local spans, pos = {}, 1
   while pos <= #text do
-    local ls, le, attrs, inner = string.find(text, "%[link%-([^%]]*)%](.-)%[%-link%]", pos)
+    local ll, le_l, al, il = string.find(text, "%[link%-([^%]]*)%](.-)%[%-link%]", pos)
+    local ld, le_d, ad     = string.find(text, "%[download ([^%]]*)%]", pos)
+    local ls, le, attrs, inner, is_dl
+    if ll and (not ld or ll <= ld) then
+      ls, le, attrs, inner, is_dl = ll, le_l, al, il, false
+    elseif ld then
+      ls, le, attrs, is_dl = ld, le_d, ad, true
+    end
     if not ls then
       local tail = string.sub(text, pos)
       if tail ~= "" then add(spans, { type="text", text=tail }) end
       break
     end
     if ls > pos then add(spans, { type="text", text=string.sub(text, pos, ls-1) }) end
-    local url  = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
-    local user = not url and string.match(attrs, "user=(%d+)")
-    local file = not url and attrs and string.match(attrs, "file=(%S+)")
-    local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
-    add(spans, { type="link", text=inner, url=url, user=user, file=file, cart=cart })
+    if is_dl then
+      local url      = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
+      local filename = url and (string.match(url, "/([^/]+)$") or url) or "file"
+      add(spans, { type="download", text="download '" .. filename .. "'", url=url, filename=filename })
+    else
+      local url  = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
+      local user = not url and string.match(attrs, "user=(%d+)")
+      local file = not url and attrs and string.match(attrs, "file=(%S+)")
+      local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
+      add(spans, { type="link", text=inner, url=url, user=user, file=file, cart=cart })
+    end
     pos = le + 1
   end
   return spans
@@ -99,17 +112,18 @@ end
 local function wrap_spans(spans, max_w)
   local toks = {}
   for _, span in ipairs(spans) do
-    local lnk = span.type == "link" and span or nil
+    local lnk = span.type == "link"     and span or nil
+    local dl  = span.type == "download" and span or nil
     for word in string.gmatch(span.text, "%S+") do
-      add(toks, { text=word, link=lnk })
+      add(toks, { text=word, link=lnk, dl=dl })
     end
   end
   if #toks == 0 then return {{}} end
   local lines, cur, cur_w = {}, {}, 0
-  local function push(text, link)
+  local function push(text, link, dl)
     local last = cur[#cur]
-    if last and last.link == link then last.text ..= text
-    else add(cur, { text=text, link=link }) end
+    if last and last.link == link and last.dl == dl then last.text ..= text
+    else add(cur, { text=text, link=link, dl=dl }) end
   end
   for _, tok in ipairs(toks) do
     local tw = measure(tok.text)
@@ -121,7 +135,7 @@ local function wrap_spans(spans, max_w)
       local last = cur[#cur]
       if last then last.text ..= " " end
     end
-    push(tok.text, tok.link)
+    push(tok.text, tok.link, tok.dl)
     cur_w += sw + tw
   end
   if #cur > 0 then add(lines, cur) end
@@ -180,7 +194,7 @@ local function parse_podweb(src)
           if p ~= "" then text = text == "" and p or (text .. " " .. p) end
         end
       end
-      if tag == "p" and string.find(text, "%[link%-") then
+      if tag == "p" and (string.find(text, "%[link%-") or string.find(text, "%[download ")) then
         add(nodes, { tag=tag, spans=parse_inline(text), font=attrs.font })
       else
         add(nodes, { tag=tag, text=text, font=attrs.font })
@@ -199,6 +213,14 @@ local function parse_podweb(src)
       local ring_url = string.match(l, "ring%-data=([^%s%]]+)")
       if my_url and ring_url then
         add(nodes, { tag="webring", my_url=my_url, ring_url=ring_url })
+      end
+      i += 1
+
+    elseif string.match(l, "^%[download ") then
+      local url = string.match(l, "url=([^%s%]]+)")
+      if url then
+        local filename = string.match(url, "/([^/]+)$") or url
+        add(nodes, { tag="download", url=url, filename=filename })
       end
       i += 1
 
@@ -226,7 +248,7 @@ local function parse_podweb(src)
       local tag      = string.lower(string.match(tag_part, "^([%a%d]+)"))
       local text     = string.match(l, "^%[[^%]]+%] (.+)")
       local attrs    = parse_attrs(tag_part)
-      if tag == "p" and string.find(text, "%[link%-") then
+      if tag == "p" and (string.find(text, "%[link%-") or string.find(text, "%[download ")) then
         add(nodes, { tag=tag, spans=parse_inline(text), font=attrs.font })
       else
         add(nodes, { tag=tag, text=text, font=attrs.font })
@@ -296,9 +318,9 @@ local function layout_nodes(nodes, cont_w)
           local lregs, rx = {}, PAD_X
           for _, seg in ipairs(line_segs) do
             local sw = measure(seg.text)
-            if seg.link then
+            if seg.link or seg.dl then
               local tw = measure((seg.text):match("^(.-)%s*$"))
-              add(lregs, { x=rx, w=tw, link=seg.link })
+              add(lregs, { x=rx, w=tw, link=seg.link, dl=seg.dl })
             end
             rx += sw
           end
@@ -313,6 +335,14 @@ local function layout_nodes(nodes, cont_w)
       end
       _apply_font(nil)
       y += 4
+
+    elseif node.tag == "download" then
+      local lh   = LINE_H
+      local text = "download '" .. node.filename .. "'"
+      local text_w = measure(text)
+      y += 2
+      add(items, { tag="download", text=text, url=node.url, filename=node.filename, y=y, line_h=lh, text_w=text_w })
+      y += lh + 2
 
     elseif node.tag == "link" then
       local lh = _item_line_h(node.font)
@@ -437,7 +467,7 @@ local function seg_hovered(doc, item, seg_x, seg_w)
      and my >= sy and my < sy + lh
 end
 
-local function inline_link_hovered(doc, item)
+local function inline_reg_hovered(doc, item)
   if not item.lregs or #item.lregs == 0 then return nil end
   local mx, my = mouse()
   local sy = doc.oy + item.y - doc.scroll_y
@@ -445,7 +475,7 @@ local function inline_link_hovered(doc, item)
   if my < sy or my >= sy + lh then return nil end
   for _, reg in ipairs(item.lregs) do
     if mx >= doc.ox + reg.x and mx < doc.ox + reg.x + reg.w then
-      return reg.link
+      return reg
     end
   end
   return nil
@@ -501,8 +531,9 @@ function pdw_parse(src, width, height)
 end
 
 function pdw_update(doc)
-  doc.navigated_to = nil
-  doc.copied        = false
+  doc.navigated_to      = nil
+  doc.copied            = false
+  doc.download_requested = nil
   local _, _, mb, _, mwy = mouse()
 
   if mwy and mwy ~= 0 then
@@ -520,6 +551,10 @@ function pdw_update(doc)
       end
     end
     for _, item in ipairs(doc.items) do
+      if item.tag == "download" and link_hovered(doc, item) then
+        doc.download_requested = { url=item.url, filename=item.filename }
+        break
+      end
       if item.tag == "link" and link_hovered(doc, item) then
         if item.url then
           doc.navigated_to = { url=item.url }
@@ -531,14 +566,19 @@ function pdw_update(doc)
         break
       end
       if item.tag == "p" then
-        local lnk = inline_link_hovered(doc, item)
-        if lnk then
-          if lnk.url then
-            doc.navigated_to = { url=lnk.url }
-          elseif lnk.cart then
-            doc.navigated_to = { cart=lnk.cart }
-          else
-            doc.navigated_to = { user=lnk.user, file=lnk.file }
+        local reg = inline_reg_hovered(doc, item)
+        if reg then
+          if reg.dl then
+            doc.download_requested = { url=reg.dl.url, filename=reg.dl.filename }
+          elseif reg.link then
+            local lnk = reg.link
+            if lnk.url then
+              doc.navigated_to = { url=lnk.url }
+            elseif lnk.cart then
+              doc.navigated_to = { cart=lnk.cart }
+            else
+              doc.navigated_to = { user=lnk.user, file=lnk.file }
+            end
           end
           break
         end
@@ -581,6 +621,11 @@ function pdw_doc(doc, ox, oy)
 
       elseif item.tag == "h3" then
         print(item.text, ox + PAD_X, y, 12)
+
+      elseif item.tag == "download" then
+        local col = link_hovered(doc, item) and 29 or 30
+        print(item.text, ox + PAD_X, y, col)
+        line(ox + PAD_X, y+lh-1, ox + PAD_X + item.text_w - 1, y+lh-1, col)
 
       elseif item.tag == "link" then
         local col = link_hovered(doc, item) and 29 or 30
@@ -632,7 +677,7 @@ function pdw_doc(doc, ox, oy)
         local sx = PAD_X
         for _, seg in ipairs(item.segs) do
           local sw = measure(seg.text)
-          if seg.link then
+          if seg.link or seg.dl then
             local tw = measure((seg.text):match("^(.-)%s*$"))
             local col = seg_hovered(doc, item, sx, tw) and 29 or 30
             print(seg.text, ox + sx, y, col)

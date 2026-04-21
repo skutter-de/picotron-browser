@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-04-17 09:53:00",modified="2026-04-20 21:08:12",revision=102,xstickers={}]]
+--[[pod_format="raw",created="2026-04-17 09:53:00",modified="2026-04-21 17:30:40",revision=103,xstickers={}]]
 -- Podweb Browser v0.3 - entry point, state, and lifecycle
 include("config.lua")
 include("domains.lua")
@@ -227,6 +227,9 @@ function _init()
 	if fstat("/appdata/podweb-browser") == nil then
 		mkdir("/appdata/podweb-browser")
 	end
+	if fstat("/appdata/podweb-browser/downloads") == nil then
+		mkdir("/appdata/podweb-browser/downloads")
+	end
 	config_file_contents = fetch(CONFIG_FILE)
 	if config_file_contents ~= nil then
 		conf = unpod(config_file_contents)
@@ -268,6 +271,7 @@ function _init()
     print("successfully downloaded saturn91 latest parser")
   else
     print("falling back to local parser")
+     popup("falling back to local parser")
   	 include("podweb-markdown.lua")
   end
 
@@ -315,6 +319,18 @@ function _update()
       else
         local cur_user = string.match(current_url, "podnet://(%d+)/")
         navigate_to("podnet://" .. (nav.user or cur_user) .. "/" .. (nav.file or "index.podweb"))
+      end
+    end
+    if document.download_requested then
+      local req      = document.download_requested
+      local fetch_url = string.gsub(req.url, "^podweb://", "podnet://")
+      local content  = fetch(fetch_url)
+      local dest     = "/appdata/podweb-browser/downloads/" .. req.filename
+      if content then
+        store(dest, content)
+        popup("downloaded to " .. dest, 6)
+      else
+        popup("download failed: " .. req.filename, 4)
       end
     end
   end

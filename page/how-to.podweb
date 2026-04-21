@@ -67,6 +67,26 @@ The quotes around the url value are required. Without them the link
 will not be recognised as an external link.
 [-p]
 
+[p] Download links let visitors save a file directly to their downloads folder:
+
+[code-]
+[download url=podnet://YOUR_USER_ID/myfile.txt]
+[download url=https://example.com/myfile.txt]
+[-code]
+
+[p-]
+Clicking the link fetches the file and saves it to
+/appdata/podweb-browser/downloads/ on the visitor's machine.
+A popup confirms where the file was saved.
+The link is displayed as download 'filename' and works like any other link.
+[-p]
+
+[p] Download links also work inline inside a paragraph:
+
+[code-]
+[p] Get started by [download url=podnet://YOUR_USER_ID/starter.txt] and follow the guide.
+[-code]
+
 [p] Inline links embedded inside a paragraph:
 
 [code-]
