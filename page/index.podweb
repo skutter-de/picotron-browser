@@ -2,10 +2,17 @@
 domain: podweb.info
 [-meta]
 
-[img url=podnet://48932/banner.gfx]
-[p] banner image by CornetTheory
+[font id=minie url=podnet://78402/fonts/minie.font height=10]
+[font id=wide url=podnet://78402/fonts/lilwide.font height=10]
 
-[h2] What is Podweb?
+[p- align=center font=wide]
+[link- file=how-to.podweb]TUTORIAL[-link] / [link- file=debug.podweb]HELP[-link] / [link- file=about.podweb]ABOUT[-link] 
+[-p]
+
+[img url=podnet://48932/banner.gfx]
+[p font=minie] banner image by CornetTheory
+
+[h1 align=center] What is Podweb?
 
 [p-]
 Podweb is a small, cozy corner of the internet living inside Picotron.
@@ -14,13 +21,19 @@ to their Lexaloffle account. Podweb turns that storage into a browsable
 web of pages, connected by links and explored through this browser.
 [-p]
 
-[h2] Some users have already contributed!!
+[break height=16]
 
-[link file=other-users.podweb] check their pages out here
+[h1 align=center] Some users have already contributed!!
+
+[link file=other-users.podweb align=center] check their pages out here
+
+[break height=16]
 
 [webring my-url=podnet://48932/index.podweb, ring-data=podnet://48932/first.webring]
 
-[h2] How it works
+[break height=24]
+
+[h1 align=center] How it works
 
 [p-]
 Each user can place an index.podweb file - in a defined markup - in their podnet folder.
@@ -38,7 +51,9 @@ one user's page to another.
 
 [link file=roadmap.podweb] roadmap
 
-[h2] update history
+[break height=24]
+
+[h1 align=center] update history
 [p] version 1.4.7 align=center/right property and a resize=false for images
 [p] version 1.4.6 BUG-FIX due to very slow cache on podnet
 [p] version 1.4.5 loading indicator and download tag
