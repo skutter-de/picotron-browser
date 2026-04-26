@@ -94,15 +94,19 @@ local function parse_inline(text)
     end
     if ls > pos then add(spans, { type="text", text=string.sub(text, pos, ls-1) }) end
     if is_dl then
-      local url      = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
-      local filename = url and (string.match(url, "/([^/]+)$") or url) or "file"
-      add(spans, { type="download", text="download '" .. filename .. "'", url=url, filename=filename })
+      local url         = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
+      local filename    = url and (string.match(url, "/([^/]+)$") or url) or "file"
+      local color       = tonumber(string.match(" " .. attrs, "[^%w_]color=(%d+)"))
+      local hover_color = tonumber(string.match(attrs, "hover_color=(%d+)"))
+      add(spans, { type="download", text="download '" .. filename .. "'", url=url, filename=filename, color=color, hover_color=hover_color })
     else
-      local url  = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
-      local user = not url and string.match(attrs, "user=(%d+)")
-      local file = not url and attrs and string.match(attrs, "file=(%S+)")
-      local cart = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
-      add(spans, { type="link", text=inner, url=url, user=user, file=file, cart=cart })
+      local url         = string.match(attrs, 'url="([^"]+)"') or string.match(attrs, "url=([^%s%]\"]+)")
+      local user        = not url and string.match(attrs, "user=(%d+)")
+      local file        = not url and attrs and string.match(attrs, "file=(%S+)")
+      local cart        = not url and attrs and string.match(attrs, "cart=#?([^%s%]]+)")
+      local color       = tonumber(string.match(" " .. attrs, "[^%w_]color=(%d+)"))
+      local hover_color = tonumber(string.match(attrs, "hover_color=(%d+)"))
+      add(spans, { type="link", text=inner, url=url, user=user, file=file, cart=cart, color=color, hover_color=hover_color })
     end
     pos = le + 1
   end
@@ -149,11 +153,12 @@ local function parse_attrs(s)
   return {
     font  = string.match(s, "font=([%w_%-]+)"),
     align = string.match(s, "align=(%a+)"),
+    color = tonumber(string.match(s, "color=(%d+)")),
   }
 end
 
 local function parse_podweb(src)
-  local nodes, lines, meta = {}, {}, {}
+  local nodes, lines, meta, theme = {}, {}, {}, {}
   src = string.gsub(src, "^%-%-%[%[.-%]%]", "")
   for line in string.gmatch(src .. "\n", "([^\n]*)\n") do add(lines, (string.gsub(line, "\r$", ""))) end
 
@@ -166,6 +171,17 @@ local function parse_podweb(src)
       while i <= #lines and not string.match(lines[i], "^%[%-meta%]") do
         local key, val = string.match(lines[i], "^(%w+):%s*(.+)")
         if key then meta[key] = val end
+        i += 1
+      end
+      i += 1
+
+    elseif string.match(l, "^%[theme%-%]") then
+      i += 1
+      while i <= #lines and not string.match(lines[i], "^%[%-theme%]") do
+        local key, val = string.match(lines[i], "^(%w+)=(%d+)$")
+        if key and DEFAULT_COLORS[key] ~= nil then
+          theme[key] = tonumber(val)
+        end
         i += 1
       end
       i += 1
@@ -199,9 +215,9 @@ local function parse_podweb(src)
         end
       end
       if tag == "p" and (string.find(text, "%[link%-") or string.find(text, "%[download ")) then
-        add(nodes, { tag=tag, spans=parse_inline(text), font=attrs.font, align=attrs.align })
+        add(nodes, { tag=tag, spans=parse_inline(text), font=attrs.font, align=attrs.align, color=attrs.color })
       else
-        add(nodes, { tag=tag, text=text, font=attrs.font, align=attrs.align })
+        add(nodes, { tag=tag, text=text, font=attrs.font, align=attrs.align, color=attrs.color })
       end
       i += 1
 
@@ -230,9 +246,11 @@ local function parse_podweb(src)
     elseif string.match(l, "^%[download ") then
       local url = string.match(l, "url=([^%s%]]+)")
       if url then
-        local filename = string.match(url, "/([^/]+)$") or url
-        local align    = string.match(l, "align=(%a+)")
-        add(nodes, { tag="download", url=url, filename=filename, align=align })
+        local filename    = string.match(url, "/([^/]+)$") or url
+        local align       = string.match(l, "align=(%a+)")
+        local color       = tonumber(string.match(" " .. l, "[^%w_]color=(%d+)"))
+        local hover_color = tonumber(string.match(l, "hover_color=(%d+)"))
+        add(nodes, { tag="download", url=url, filename=filename, align=align, color=color, hover_color=hover_color })
       end
       i += 1
 
@@ -253,6 +271,8 @@ local function parse_podweb(src)
           cart  = cart,
           font  = font,
           align = align,
+          color       = attrs and tonumber(string.match(" " .. (attrs or ""), "[^%w_]color=(%d+)")),
+          hover_color = attrs and tonumber(string.match(attrs, "hover_color=(%d+)")),
         })
       end
       i += 1
@@ -263,9 +283,9 @@ local function parse_podweb(src)
       local text     = string.match(l, "^%[[^%]]+%] (.+)")
       local attrs    = parse_attrs(tag_part)
       if tag == "p" and (string.find(text, "%[link%-") or string.find(text, "%[download ")) then
-        add(nodes, { tag=tag, spans=parse_inline(text), font=attrs.font, align=attrs.align })
+        add(nodes, { tag=tag, spans=parse_inline(text), font=attrs.font, align=attrs.align, color=attrs.color })
       else
-        add(nodes, { tag=tag, text=text, font=attrs.font, align=attrs.align })
+        add(nodes, { tag=tag, text=text, font=attrs.font, align=attrs.align, color=attrs.color })
       end
       i += 1
 
@@ -274,7 +294,7 @@ local function parse_podweb(src)
     end
   end
 
-  return nodes, meta
+  return nodes, meta, theme
 end
 
 -- layout
@@ -318,7 +338,7 @@ local function layout_nodes(nodes, cont_w)
       _apply_font(ef)
       local x_start = calc_x_start(node.align, measure(node.text), cont_w)
       _apply_font(nil)
-      add(items, { tag="h1", text=node.text, y=y, font=ef, line_h=lh, x_start=x_start })
+      add(items, { tag="h1", text=node.text, y=y, font=ef, line_h=lh, x_start=x_start, color=node.color })
       y += lh + 4
 
     elseif node.tag == "h2" then
@@ -327,7 +347,7 @@ local function layout_nodes(nodes, cont_w)
       _apply_font(node.font)
       local x_start = calc_x_start(node.align, measure(node.text), cont_w)
       _apply_font(nil)
-      add(items, { tag="h2", text=node.text, y=y, font=node.font, line_h=lh, x_start=x_start })
+      add(items, { tag="h2", text=node.text, y=y, font=node.font, line_h=lh, x_start=x_start, color=node.color })
       y += lh + 3
 
     elseif node.tag == "h3" then
@@ -336,7 +356,7 @@ local function layout_nodes(nodes, cont_w)
       _apply_font(node.font)
       local x_start = calc_x_start(node.align, measure(node.text), cont_w)
       _apply_font(nil)
-      add(items, { tag="h3", text=node.text, y=y, font=node.font, line_h=lh, x_start=x_start })
+      add(items, { tag="h3", text=node.text, y=y, font=node.font, line_h=lh, x_start=x_start, color=node.color })
       y += lh + 2
 
     elseif node.tag == "p" then
@@ -356,13 +376,13 @@ local function layout_nodes(nodes, cont_w)
             end
             rx += sw
           end
-          add(items, { tag="p", segs=line_segs, lregs=lregs, y=y, font=node.font, line_h=lh, x_start=x_start })
+          add(items, { tag="p", segs=line_segs, lregs=lregs, y=y, font=node.font, line_h=lh, x_start=x_start, color=node.color })
           y += lh
         end
       else
         for _, line in ipairs(wrap_text(node.text, cont_w)) do
           local x_start = calc_x_start(node.align, measure(line), cont_w)
-          add(items, { tag="p", text=line, y=y, font=node.font, line_h=lh, x_start=x_start })
+          add(items, { tag="p", text=line, y=y, font=node.font, line_h=lh, x_start=x_start, color=node.color })
           y += lh
         end
       end
@@ -379,7 +399,7 @@ local function layout_nodes(nodes, cont_w)
       local text_w = measure(text)
       local x_start = calc_x_start(node.align, text_w, cont_w)
       y += 2
-      add(items, { tag="download", text=text, url=node.url, filename=node.filename, y=y, line_h=lh, text_w=text_w, x_start=x_start })
+      add(items, { tag="download", text=text, url=node.url, filename=node.filename, y=y, line_h=lh, text_w=text_w, x_start=x_start, color=node.color, hover_color=node.hover_color })
       y += lh + 2
 
     elseif node.tag == "link" then
@@ -389,7 +409,7 @@ local function layout_nodes(nodes, cont_w)
       local x_start = calc_x_start(node.align, text_w, cont_w)
       _apply_font(nil)
       y += 2
-      add(items, { tag="link", text=node.text, url=node.url, user=node.user, file=node.file, cart=node.cart, y=y, font=node.font, line_h=lh, text_w=text_w, x_start=x_start })
+      add(items, { tag="link", text=node.text, url=node.url, user=node.user, file=node.file, cart=node.cart, y=y, font=node.font, line_h=lh, text_w=text_w, x_start=x_start, color=node.color, hover_color=node.hover_color })
       y += lh + 2
 
     elseif node.tag == "code" then
@@ -558,7 +578,10 @@ end
 
 function pdw_parse(src, width, height)
   local cont_w           = width - PAD_X * 2 - SCROLL_W
-  local nodes, meta      = parse_podweb(src)
+  local nodes, meta, theme = parse_podweb(src)
+  local colors = {}
+  for k, v in pairs(DEFAULT_COLORS) do colors[k] = v end
+  for k, v in pairs(theme) do colors[k] = v end
   local items, content_h = layout_nodes(nodes, cont_w)
   local max_scroll       = max(0, content_h - height)
   local doc = {
@@ -573,6 +596,7 @@ function pdw_parse(src, width, height)
     oy             = 0,
     prev_mb        = 0,
     navigated_to   = nil,
+    colors         = colors,
   }
   return doc, max_scroll
 end
@@ -649,8 +673,10 @@ function pdw_update(doc)
 end
 
 function pdw_doc(doc, ox, oy)
+  local C = doc.colors
   doc.ox, doc.oy = ox, oy
   clip(ox, oy, doc.width, doc.height)
+  rectfill(ox, oy, ox + doc.width - 1, oy + doc.height - 1, C.bg)
 
   for _, item in ipairs(doc.items) do
     local y      = oy + item.y - doc.scroll_y
@@ -661,22 +687,22 @@ function pdw_doc(doc, ox, oy)
       _apply_font(item.font)
 
       if item.tag == "h1" then
-        print("\^u" .. item.text, ox + (item.x_start or PAD_X), y, 7)
+        print("\^u" .. item.text, ox + (item.x_start or PAD_X), y, item.color or C.h1)
 
       elseif item.tag == "h2" then
-        print("\^u" .. item.text, ox + (item.x_start or PAD_X), y, 12)
+        print("\^u" .. item.text, ox + (item.x_start or PAD_X), y, item.color or C.h2)
 
       elseif item.tag == "h3" then
-        print(item.text, ox + (item.x_start or PAD_X), y, 12)
+        print(item.text, ox + (item.x_start or PAD_X), y, item.color or C.h3)
 
       elseif item.tag == "download" then
-        local col = link_hovered(doc, item) and 29 or 30
+        local col = link_hovered(doc, item) and (item.hover_color or C.link_hover) or (item.color or C.link)
         local lx  = ox + (item.x_start or PAD_X)
         print(item.text, lx, y, col)
         line(lx, y+lh-1, lx + item.text_w - 1, y+lh-1, col)
 
       elseif item.tag == "link" then
-        local col = link_hovered(doc, item) and 29 or 30
+        local col = link_hovered(doc, item) and (item.hover_color or C.link_hover) or (item.color or C.link)
         local lx  = ox + (item.x_start or PAD_X)
         print(item.text, lx, y, col)
         line(lx, y+lh-1, lx + item.text_w - 1, y+lh-1, col)
@@ -710,25 +736,25 @@ function pdw_doc(doc, ox, oy)
       elseif item.tag == "webring" then
         _apply_font(nil)
         local gx = ox + PAD_X + flr((doc.cont_w - item.group_w) / 2)
-        print(item.title, gx, y, 6)
+        print(item.title, gx, y, C.text)
         if item.join_url then
           local jx  = gx + item.join_offset_x
-          local jcol = webring_join_hovered(doc, item) and 29 or 30
+          local jcol = webring_join_hovered(doc, item) and C.link_hover or C.link
           print("join us", jx, y, jcol)
           line(jx, y+LINE_H-1, jx+item.join_w-1, y+LINE_H-1, jcol)
         end
         local by = y + LINE_H + 4
         local lx, rx = webring_btn_x(doc, item)
         local ph = webring_btn_hovered(doc, item, "prev")
-        rectfill(lx, by, lx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, ph and 5 or 1)
-        rect    (lx, by, lx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, ph and 12 or 5)
+        rectfill(lx, by, lx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, ph and C.btn_bg_hover or C.btn_bg)
+        rect    (lx, by, lx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, ph and C.btn_border_hover or C.btn_border)
         local pw = measure("< prev")
-        print("< prev", lx + flr((WEBRING_BTN_W - pw) / 2), by + flr((WEBRING_BTN_H - LINE_H) / 2) + 1, 7)
+        print("< prev", lx + flr((WEBRING_BTN_W - pw) / 2), by + flr((WEBRING_BTN_H - LINE_H) / 2) + 1, C.btn_text)
         local nh = webring_btn_hovered(doc, item, "next")
-        rectfill(rx, by, rx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, nh and 5 or 1)
-        rect    (rx, by, rx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, nh and 12 or 5)
+        rectfill(rx, by, rx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, nh and C.btn_bg_hover or C.btn_bg)
+        rect    (rx, by, rx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, nh and C.btn_border_hover or C.btn_border)
         local nw = measure("next >")
-        print("next >", rx + flr((WEBRING_BTN_W - nw) / 2), by + flr((WEBRING_BTN_H - LINE_H) / 2) + 1, 7)
+        print("next >", rx + flr((WEBRING_BTN_W - nw) / 2), by + flr((WEBRING_BTN_H - LINE_H) / 2) + 1, C.btn_text)
 
       elseif item.tag == "p" and item.segs then
         local sx = item.x_start or PAD_X
@@ -736,17 +762,18 @@ function pdw_doc(doc, ox, oy)
           local sw = measure(seg.text)
           if seg.link or seg.dl then
             local tw = measure((seg.text):match("^(.-)%s*$"))
-            local col = seg_hovered(doc, item, sx, tw) and 29 or 30
+            local lnk = seg.link or seg.dl
+            local col = seg_hovered(doc, item, sx, tw) and (lnk.hover_color or C.link_hover) or (lnk.color or C.link)
             print(seg.text, ox + sx, y, col)
             line(ox + sx, y+lh-1, ox + sx + tw - 1, y+lh-1, col)
           else
-            print(seg.text, ox + sx, y, 6)
+            print(seg.text, ox + sx, y, item.color or C.text)
           end
           sx += sw
         end
 
       elseif item.text then
-        print(item.text, ox + (item.x_start or PAD_X), y, 6)
+        print(item.text, ox + (item.x_start or PAD_X), y, item.color or C.text)
       end
 
       _apply_font(nil)
