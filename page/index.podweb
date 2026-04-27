@@ -54,7 +54,9 @@ one user's page to another.
 [break height=24]
 
 [h1 align=center] update history
-[p] version 1.4.8 align=center/right property and a resize=false for images
+[p] version 1.4.9 pass parameters to cardridge to open a specific page
+[p] version 1.4.8 custom colors per page
+[p] version 1.4.7 align=center/right property and a resize=false for images
 [p] version 1.4.6 BUG-FIX due to very slow cache on podnet
 [p] version 1.4.5 loading indicator and download tag
 [p] version 1.4.4 configurable as tabbed or windowed via settings
