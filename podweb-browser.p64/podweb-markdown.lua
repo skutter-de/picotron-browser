@@ -16,6 +16,12 @@ local CHAR_W   = 4
 local PAD_X    = 6
 local SCROLL_W = 4
 
+local CMT_AVAT    = 16
+local CMT_PAD     = 4
+local CMT_VPAD    = 4
+local CMT_HEAD_H  = LINE_H + 6
+local CMT_INPUT_H = 16
+
 local WEBRING_BTN_W   = 44
 local WEBRING_BTN_H   = 13
 local WEBRING_BTN_GAP = 10
@@ -147,6 +153,37 @@ local function wrap_spans(spans, max_w)
   return lines
 end
 
+-- comment helpers
+
+local function make_table_name(url)
+  local s = string.match(url, "^podnet://(.+)") or url
+  s = string.gsub(string.lower(s), "[^%a%d]", "_")
+  return string.sub("podweb_" .. s, 1, 40)
+end
+
+local function layout_comment_entries(entries, text_w)
+  _apply_font(nil)
+  -- scoresub returns highest score (newest) first; collect then reverse
+  local valid = {}
+  for _, e in ipairs(entries) do
+    if e.extra and e.extra ~= "" then
+      local ts, text = string.match(e.extra, "^([^|]+)|(.+)")
+      if ts and text then
+        add(valid, { e=e, ts=ts, text=text })
+      end
+    end
+  end
+  local laid, cy = {}, 0
+  for i = #valid, 1, -1 do
+    local p       = valid[i]
+    local wrapped = wrap_text(p.text, text_w)
+    local h = CMT_VPAD + max(CMT_AVAT, LINE_H + #wrapped * LINE_H) + CMT_VPAD
+    add(laid, { user=p.e.username, date=p.ts, lines=wrapped, cy=cy, h=h, icon=p.e.icon, score=p.e.score })
+    cy += h + 1
+  end
+  return laid, cy
+end
+
 -- parser
 
 local function parse_attrs(s)
@@ -233,6 +270,11 @@ local function parse_podweb(src)
     elseif string.match(l, "^%[break") then
       local h = tonumber(string.match(l, "height=(%d+)")) or LINE_H
       add(nodes, { tag="break", height=h })
+      i += 1
+
+    elseif string.match(l, "^%[comments") then
+      local h = tonumber(string.match(l, "height=(%d+)")) or 140
+      add(nodes, { tag="comments", height=h })
       i += 1
 
     elseif string.match(l, "^%[webring ") then
@@ -448,6 +490,52 @@ local function layout_nodes(nodes, cont_w)
         y += LINE_H + 4
       end
 
+    elseif node.tag == "comments" then
+      local uid      = stat(64)
+      local enabled  = uid and uid ~= 0
+                    and current_url and string.match(current_url, "^podnet://")
+      local text_w   = cont_w + PAD_X * 2 - CMT_AVAT - CMT_PAD * 3 - SCROLL_W
+      local tname    = enabled and make_table_name(current_url) or nil
+      local raw      = {}
+      local laid, cy = {}, 0
+      local scroll_area_h = node.height - CMT_HEAD_H - CMT_INPUT_H - 2
+
+      local submit_flag = { requested = false }
+      local cmt_gui = create_gui()
+      local cmt_txt = cmt_gui:attach_text_editor {
+        x = -500, y = -500, width = 300, height = 14,
+        key_callback = {
+          ["enter"] = function(self, k)
+            submit_flag.requested = true
+            return nil
+          end
+        }
+      }
+
+      y += 4
+      add(items, {
+        tag           = "comments",
+        comments      = laid,
+        content_h     = cy,
+        raw_scores    = raw,
+        table_name    = tname,
+        text_w        = text_w,
+        disabled      = not enabled,
+        scroll_area_h = scroll_area_h,
+        y             = y,
+        h             = node.height,
+        line_h        = node.height,
+        scroll_y      = 0,
+        max_scroll    = max(0, cy - scroll_area_h),
+        gui           = cmt_gui,
+        txt           = cmt_txt,
+        submit_flag     = submit_flag,
+        input_focused   = false,
+        comments_ready  = false,
+        poll_timer      = 0,
+      })
+      y += node.height + 4
+
     elseif node.tag == "webring" then
       local raw = fetch(node.ring_url)
       local title, join_url, urls = "webring", nil, {}
@@ -605,10 +693,27 @@ function pdw_update(doc)
   doc.navigated_to      = nil
   doc.copied            = false
   doc.download_requested = nil
-  local _, _, mb, _, mwy = mouse()
+  local mx, my, mb, _, mwy = mouse()
 
   if mwy and mwy ~= 0 then
-    doc.scroll_y = mid(0, doc.scroll_y - mwy * 8, doc.max_scroll)
+    local scrolled = false
+    if doc.oy then
+      for _, item in ipairs(doc.items) do
+        if item.tag == "comments" then
+          local iy  = doc.oy + item.y - doc.scroll_y
+          local say = iy + CMT_HEAD_H + 1
+          if mx >= doc.ox and mx < doc.ox + doc.width
+             and my >= say and my < say + item.scroll_area_h then
+            item.scroll_y = mid(0, item.scroll_y - mwy * 8, item.max_scroll)
+            scrolled = true
+            break
+          end
+        end
+      end
+    end
+    if not scrolled then
+      doc.scroll_y = mid(0, doc.scroll_y - mwy * 8, doc.max_scroll)
+    end
   end
   if btn(2) then doc.scroll_y = max(0,              doc.scroll_y - 3) end
   if btn(3) then doc.scroll_y = min(doc.max_scroll, doc.scroll_y + 3) end
@@ -669,7 +774,115 @@ function pdw_update(doc)
     end
   end
 
+  -- comment input: gui update, focus, and submit
+  for _, item in ipairs(doc.items) do
+    if item.tag == "comments" and item.gui then
+
+      -- poll until scoresub returns data on first load
+      if not item.comments_ready and item.table_name then
+        item.poll_timer += 1
+        if item.poll_timer % 30 == 1 then
+          local raw = scoresub(item.table_name) or {}
+          if #raw > 0 then
+            item.raw_scores     = raw
+            item.comments, item.content_h = layout_comment_entries(raw, item.text_w)
+            item.max_scroll     = max(0, item.content_h - item.scroll_area_h)
+            item.scroll_y       = item.max_scroll
+            item.comments_ready = true
+          end
+        end
+      end
+
+      -- submit (enter key or post button)
+      if not item.disabled and item.submit_flag and item.submit_flag.requested then
+        item.submit_flag.requested = false
+        local lines = item.txt:get_text()
+        local text  = string.match((lines and lines[1]) or "", "^%s*(.-)%s*$")
+        if text ~= "" and item.table_name then
+          local uid = stat(64)
+          local cur_score = 0
+          for _, e in ipairs(item.raw_scores) do
+            if tostring(e.user_id) == tostring(uid) then
+              cur_score = e.score ; break
+            end
+          end
+          local ts        = date("%Y-%m-%d %H:%M:%S")
+          local new_score = cur_score + 1
+          scoresub(item.table_name, new_score, ts .. "|" .. text)
+          -- optimistic patch: show comment immediately without waiting for server
+          local patched, found = {}, false
+          for _, e in ipairs(item.raw_scores) do
+            if tostring(e.user_id) == tostring(uid) then
+              local ec = {}
+              for k, v in pairs(e) do ec[k] = v end
+              ec.score = new_score
+              ec.extra = ts .. "|" .. text
+              add(patched, ec)
+              found = true
+            else
+              add(patched, e)
+            end
+          end
+          if not found then
+            add(patched, { user_id=uid, username=stat(65) or "?", icon=stat(66), score=new_score, extra=ts .. "|" .. text })
+          end
+          item.raw_scores     = patched
+          item.comments, item.content_h = layout_comment_entries(patched, item.text_w)
+          item.max_scroll     = max(0, item.content_h - item.scroll_area_h)
+          item.scroll_y       = item.max_scroll
+          item.txt:set_text("")
+          item.comments_ready = true
+          popup("comment posted!", 3)
+        end
+      end
+
+      item.gui:update_all()
+
+      local focus_req = nil
+      if (doc.prev_mb & 1) == 1 and (mb & 1) == 0 and doc.oy then
+        local iy      = doc.oy + item.y - doc.scroll_y
+        local ipy     = iy + item.h - CMT_INPUT_H
+        local btn_w   = 24
+        local cmt_w   = doc.width - SCROLL_W - 3
+        local field_x = doc.ox + CMT_PAD
+        local field_w = cmt_w - CMT_PAD * 3 - btn_w
+        local field_y = ipy + 2
+        local field_h = CMT_INPUT_H - 5
+        local btn_x   = field_x + field_w + CMT_PAD
+        local btn_x2  = doc.ox + cmt_w - CMT_PAD - 1
+
+        if mx >= field_x and mx <= field_x + field_w and my >= field_y and my <= field_y + field_h then
+          item.input_focused = true
+          focus_req = true
+        elseif mx >= btn_x and mx <= btn_x2 and my >= field_y and my <= field_y + field_h then
+          item.submit_flag.requested = true
+          item.input_focused = false
+          focus_req = false
+        else
+          item.input_focused = false
+          focus_req = false
+        end
+      end
+
+      if focus_req ~= nil then
+        item.txt:set_keyboard_focus(focus_req)
+      end
+    end
+  end
+
   doc.prev_mb = mb
+end
+
+function pdw_load_comments(doc)
+  for _, item in ipairs(doc.items) do
+    if item.tag == "comments" and item.table_name then
+      local raw           = scoresub(item.table_name) or {}
+      item.raw_scores     = raw
+      item.comments, item.content_h = layout_comment_entries(raw, item.text_w)
+      item.max_scroll     = max(0, item.content_h - item.scroll_area_h)
+      item.scroll_y       = item.max_scroll
+    end
+  end
 end
 
 function pdw_doc(doc, ox, oy)
@@ -755,6 +968,101 @@ function pdw_doc(doc, ox, oy)
         rect    (rx, by, rx+WEBRING_BTN_W-1, by+WEBRING_BTN_H-1, nh and C.btn_border_hover or C.btn_border)
         local nw = measure("next >")
         print("next >", rx + flr((WEBRING_BTN_W - nw) / 2), by + flr((WEBRING_BTN_H - LINE_H) / 2) + 1, C.btn_text)
+
+      elseif item.tag == "comments" then
+        _apply_font(nil)
+        local bx   = ox
+        local bx2  = ox + doc.width - SCROLL_W - 3
+        local say  = y + CMT_HEAD_H + 1
+        local sah  = item.scroll_area_h
+        local ipy  = y + item.h - CMT_INPUT_H
+
+        -- header
+        line(bx, y, bx2, y, C.text)
+        print("Comments", bx + CMT_PAD, y + 2, C.text)
+        line(bx, say - 1, bx2, say - 1, C.text)
+
+        if item.disabled then
+          local msg = "comments are only available on podnet:// pages when logged in"
+          local mw  = print(msg, 0, -100)
+          print(msg, bx + flr(((bx2 - bx) - mw) / 2), say + flr(item.scroll_area_h / 2) - 3, 5)
+          line(bx, y + item.h, bx2, y + item.h, C.text)
+        else
+
+        -- clip to scroll area and draw comments
+        clip(bx, say, doc.width, sah)
+        for _, c in ipairs(item.comments) do
+          local cy = say + c.cy - item.scroll_y
+          if cy + c.h > say and cy < say + sah then
+            local icy = cy + CMT_VPAD
+            if c.icon then
+              spr(c.icon, bx + CMT_PAD, icy)
+            else
+              rectfill(bx + CMT_PAD, icy, bx + CMT_PAD + CMT_AVAT - 1, icy + CMT_AVAT - 1, 8)
+            end
+            local tx = bx + CMT_PAD + CMT_AVAT + CMT_PAD
+            print(c.user, tx, icy, C.text)
+            local dw = print(c.date, 0, -100)
+            print(c.date, bx2 - SCROLL_W - CMT_PAD - dw, icy, 5)
+            for li, ln in ipairs(c.lines) do
+              print(ln, tx, icy + li * LINE_H, C.text)
+            end
+          end
+          local sep_y = say + c.cy + c.h - item.scroll_y
+          if sep_y >= say and sep_y < say + sah then
+            line(bx + CMT_PAD, sep_y, bx2 - SCROLL_W - CMT_PAD, sep_y, 5)
+          end
+        end
+
+        -- comment scrollbar
+        if item.max_scroll > 0 then
+          local sx      = bx2 - SCROLL_W + 1
+          local thumb_h = max(6, flr(sah * sah / (sah + item.max_scroll)))
+          local thumb_y = say + flr(item.scroll_y / item.max_scroll * (sah - thumb_h))
+          line(sx, say, sx, say + sah - 1, 1)
+          rectfill(sx, thumb_y, sx + SCROLL_W - 1, thumb_y + thumb_h - 1, 5)
+        end
+
+        -- restore doc clip
+        clip(ox, oy, doc.width, doc.height)
+
+        -- input row
+        line(bx, ipy - 1, bx2, ipy - 1, C.text)
+        local btn_w   = 24
+        local field_x = bx + CMT_PAD
+        local field_w = (bx2 - bx + 1) - CMT_PAD * 3 - btn_w
+        local field_y = ipy + 2
+        local field_h = CMT_INPUT_H - 5
+
+        -- mock field with real text + cursor
+        local border_col  = item.input_focused and 6 or 5
+        rect(field_x, field_y, field_x + field_w - 1, field_y + field_h - 1, border_col)
+        if item.txt then
+          local lines        = item.txt:get_text()
+          local content      = (lines and lines[1]) or ""
+          local cur_x        = item.txt:get_cursor()
+          local before       = string.sub(content, 1, cur_x - 1)
+          local cursor_px    = print(before, 0, -100)
+          local inner_w      = field_w - CMT_PAD * 2
+          local text_offset  = max(0, cursor_px - inner_w + 4)
+          clip(field_x + 1, field_y + 1, field_w - 2, field_h - 2)
+          print(content, field_x + CMT_PAD - text_offset, field_y + 2, C.text)
+          if item.input_focused and (popup_frame % 30) < 15 then
+            local px = field_x + CMT_PAD + cursor_px - text_offset
+            rectfill(px, field_y + 2, px + 2, field_y + field_h - 3, C.text)
+          end
+          clip(ox, oy, doc.width, doc.height)
+        end
+
+        local btn_x = field_x + field_w + CMT_PAD
+        rectfill(btn_x, field_y, btn_x + btn_w - 1, field_y + field_h - 1, 2)
+        rect    (btn_x, field_y, btn_x + btn_w - 1, field_y + field_h - 1, 5)
+        local pw = print("post", 0, -100)
+        print("post", btn_x + flr((btn_w - pw) / 2), field_y + 2, C.text)
+
+        -- bottom border
+        line(bx, y + item.h, bx2, y + item.h, C.text)
+        end  -- disabled/enabled
 
       elseif item.tag == "p" and item.segs then
         local sx = item.x_start or PAD_X
