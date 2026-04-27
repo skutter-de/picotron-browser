@@ -1,0 +1,65 @@
+[h1] How to change your start page
+
+[p-]
+By default the browser opens your home page. All four methods below
+let you point it at any podweb URL instead.
+[-p]
+
+[h2] 1. Command line argument
+
+[p] Pass the URL directly when launching the browser from the Picotron terminal:
+
+[code-]
+podweb-browser.p64 podnet://12345/my-page.podweb
+[-code]
+
+[h2] 2. create_process (from another cartridge)
+
+[p] Start the browser from Lua and hand it a URL:
+
+[code-]
+create_process("/path/to/podweb-browser.p64", {url="podnet://12345/my-page.podweb"})
+[-code]
+
+[h2] 3. BBS thread link
+
+[p-]
+Append a page parameter to any link that opens the browser on the
+Lexaloffle BBS. The podnet URL must be URL-encoded first.
+[-p]
+
+[code-]
+https://www.lexaloffle.com/bbs/?tid=156290?page=podnet%3A%2F%2F48932%2Ftest.podweb
+[-code]
+
+[p] Use this tool to encode your URL:
+
+[code-]
+https://www.urlencoder.org/
+[-code]
+
+[p] Quick reference for the most common characters:
+
+[code-]
+:  becomes  %3A
+/  becomes  %2F
+[-code]
+
+[h2] 4. Embedded iframe on your own website
+
+[p-]
+You can embed the browser in a plain HTML page. Set the page parameter
+in the iframe src to the URL-encoded podnet address you want to open.
+[-p]
+
+[p] the below code block is not really visible, but you should still be able to copy it
+
+[code-]
+<iframe
+  src="https://www.lexaloffle.com/bbs/widget.php?pid=podnet_browser&page=podnet%3A%2F%2F48932%2Ftest.podweb"
+  allowfullscreen width="961" height="541"
+  style="border:none; overflow:hidden">
+</iframe>
+[-code]
+
+[link file=how-to.podweb] back to how-to
